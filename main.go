@@ -12,6 +12,82 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+func main() {
+	irc := NewIrc()
+	if err := irc.Connect("wss", "irc-ws.chat.twitch.tv:443"); err != nil {
+		log.Fatalf("FATAL: connect - %s", err)
+	}
+	defer irc.Close()
+
+	token := os.Getenv("TWITCH_TOKEN")
+	passCmd := fmt.Sprintf("PASS %s", token)
+	if err := irc.Write(passCmd); err != nil {
+		log.Fatalf("FATAL: send PASS failed: %s", err)
+	}
+	log.Println("< PASS ***")
+
+	nickCmd := fmt.Sprintf("NICK medgebot")
+	if err := irc.Write(nickCmd); err != nil {
+		log.Fatalf("FATAL: send NICK failed: %s", err)
+	}
+
+	// Read goroutine for the main chat stream
+	go func() {
+		for {
+			msgStr, err := irc.Read()
+			if err != nil {
+				log.Println("ERROR: read from connection - " + err.Error())
+				break
+			}
+
+			trimmed := strings.TrimSpace(msgStr)
+			tokens := strings.Split(trimmed, " ")
+			switch tokens[0] {
+			// PING / PONG must be honored...or we get YEETd
+			// PING :tmi.twitch.tv -> []string{PING, :tmi.twitch.tv}
+			case "PING":
+				if err := irc.Write("PONG " + tokens[1]); err != nil {
+					log.Printf("ERROR: send PONG failed: %s", err)
+				}
+			// prefix command params
+			// [715209!715209@715209.tmi.twitch.tv PRIVMSG #medgelabs :i like rust]
+			default:
+				if strings.Contains(msgStr, "PRIVMSG") && len(tokens) > 4 {
+					msg := strings.TrimPrefix(strings.Join(tokens[3:], " "), ":")
+					log.Printf("MSG: %s", msg)
+				}
+			}
+		}
+	}()
+
+	time.Sleep(time.Second * 2)
+	joinCmd := fmt.Sprintf("JOIN #medgelabs")
+	// TODO parameterize
+	if err := irc.Write(joinCmd); err != nil {
+		log.Fatalf("FATAL: send JOIN failed: %s", err)
+	}
+
+	// Allow sending IRC commands from stdin
+	go func() {
+		reader := bufio.NewReader(os.Stdin)
+		for {
+			cmd, err := reader.ReadString('\n')
+			if err != nil {
+				log.Printf("ERROR: read stdin - %s", err)
+			}
+
+			if err := irc.Write(cmd); err != nil {
+				log.Fatalf("FATAL: send %s failed: %s", cmd, err)
+			}
+		}
+	}()
+
+	// TODO _no_
+	for {
+		time.Sleep(time.Second)
+	}
+}
+
 type Irc struct {
 	conn *websocket.Conn
 }
@@ -64,71 +140,4 @@ func (irc *Irc) Write(message string) error {
 func (irc *Irc) Close() {
 	irc.conn.Close()
 	log.Println("INFO: connection closed")
-}
-
-func main() {
-	irc := NewIrc()
-	if err := irc.Connect("wss", "irc-ws.chat.twitch.tv:443"); err != nil {
-		log.Fatalf("FATAL: connect - %s", err)
-	}
-	defer irc.Close()
-
-	token := os.Getenv("TWITCH_TOKEN")
-	passCmd := fmt.Sprintf("PASS %s", token)
-	if err := irc.Write(passCmd); err != nil {
-		log.Fatalf("FATAL: send PASS failed: %s", err)
-	}
-	log.Println("< PASS ***")
-
-	nickCmd := fmt.Sprintf("NICK medgelabs")
-	if err := irc.Write(nickCmd); err != nil {
-		log.Fatalf("FATAL: send NICK failed: %s", err)
-	}
-
-	go func() {
-		for {
-			msgStr, err := irc.Read()
-			if err != nil {
-				log.Println("ERROR: read from connection - " + err.Error())
-				break
-			}
-
-			// PING / PONG must be honored...or we get YEETd
-			// PING :tmi.twitch.tv -> []string{PING, :tmi.twitch.tv}
-			tokens := strings.Split(msgStr, " ")
-			switch tokens[0] {
-			case "PING":
-				if err := irc.Write("PONG " + tokens[1]); err != nil {
-					log.Printf("ERROR: send PONG failed: %s", err)
-				}
-			}
-		}
-	}()
-
-	time.Sleep(time.Second * 2)
-	joinCmd := fmt.Sprintf("JOIN #medgelabs")
-	// TODO parameterize
-	if err := irc.Write(joinCmd); err != nil {
-		log.Fatalf("FATAL: send JOIN failed: %s", err)
-	}
-
-	// Allow sending IRC commands from stdin
-	go func() {
-		reader := bufio.NewReader(os.Stdin)
-		for {
-			cmd, err := reader.ReadString('\n')
-			if err != nil {
-				log.Printf("ERROR: read stdin - %s", err)
-			}
-
-			if err := irc.Write(cmd); err != nil {
-				log.Fatalf("FATAL: send %s failed: %s", cmd, err)
-			}
-		}
-	}()
-
-	// TODO _no_
-	for {
-		time.Sleep(time.Second)
-	}
 }
