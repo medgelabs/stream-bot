@@ -10,12 +10,6 @@ import (
 	"time"
 )
 
-type Message struct {
-	Prefix  string
-	Command string
-	Params  []string
-}
-
 func main() {
 	channel := "#medgelabs"
 	nick := "medgelabs"
@@ -41,36 +35,16 @@ func main() {
 	// Read goroutine for the main chat stream
 	go func() {
 		for {
-			msgStr, err := irc.Read()
+			msg, err := irc.Read()
 			if err != nil {
 				log.Println("ERROR: read from connection - " + err.Error())
 				break
 			}
-			log.Printf("> %s", msgStr)
-
-			trimmed := strings.TrimSpace(msgStr)
-			tokens := strings.Split(trimmed, " ")
-
-			var msg Message
-			if strings.HasPrefix(tokens[0], ":") {
-				msg = Message{
-					// TODO this will break when prefix > 1 token
-					// Need to add processing for space-delimited prefix as well
-					Prefix:  tokens[0],
-					Command: tokens[1],
-					Params:  tokens[2:],
-				}
-			} else {
-				msg = Message{
-					Prefix:  "",
-					Command: tokens[0],
-					Params:  tokens[1:], // TODO are there any commands we need to handle that have no params?
-				}
-			}
+			log.Printf("> %s", msg.String())
 
 			// PING / PONG must be honored...or we get disconnected
 			if msg.Command == "PING" {
-				if err := irc.Write("PONG " + tokens[1]); err != nil {
+				if err := irc.Write("PONG " + strings.Join(msg.Params, " ")); err != nil {
 					log.Printf("ERROR: send PONG failed: %s", err)
 				}
 			}
