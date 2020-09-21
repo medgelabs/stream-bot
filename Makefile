@@ -3,4 +3,4 @@ APP=medgebot
 
 .PHONY: build
 build:
-	go build -o ${BUILD_DIR}/${APP} main.go
+	GOOS=linux GOARCH=amd64 go build -o ${BUILD_DIR}/${APP} main.go
