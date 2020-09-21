@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"medgebot/irc"
@@ -71,26 +70,11 @@ func main() {
 		}
 	}()
 
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second)
 	joinCmd := fmt.Sprintf("JOIN %s", channel)
 	if err := irc.Write(joinCmd); err != nil {
 		log.Fatalf("FATAL: send JOIN failed: %s", err)
 	}
-
-	// Allow sending IRC commands from stdin
-	go func() {
-		reader := bufio.NewReader(os.Stdin)
-		for {
-			cmd, err := reader.ReadString('\n')
-			if err != nil {
-				log.Printf("ERROR: read stdin - %s", err)
-			}
-
-			if err := irc.Write(cmd); err != nil {
-				log.Fatalf("FATAL: send %s failed: %s", cmd, err)
-			}
-		}
-	}()
 
 	// TODO _no_
 	for {
