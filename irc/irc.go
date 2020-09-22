@@ -22,7 +22,7 @@ type Message struct {
 }
 
 func (msg Message) String() string {
-	return fmt.Sprintf("%s %s :%s", msg.Prefix, msg.Command, strings.Join(msg.Params, " "))
+	return fmt.Sprintf("%s %s %s", msg.Prefix, msg.Command, strings.Join(msg.Params, " "))
 }
 
 func NewClient() *Irc {
@@ -44,6 +44,7 @@ func (irc *Irc) Connect(scheme, server string) error {
 	return nil
 }
 
+// Read reads from the IRC stream, one line at a time
 func (irc *Irc) Read() (Message, error) {
 	_, message, err := irc.conn.ReadMessage()
 	if err != nil {
@@ -75,19 +76,33 @@ func (irc *Irc) Read() (Message, error) {
 	return msg, nil
 }
 
-func (irc *Irc) Write(message string) error {
+// Write writes a message to the IRC stream
+func (irc *Irc) Write(message Message) error {
 	if irc.conn == nil {
 		return fmt.Errorf("Irc.conn is nil. Did you forget to call Irc.Connect()?")
 	}
 
-	if err := irc.conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+	msgStr := fmt.Sprintf("%s %s", message.Command, strings.Join(message.Params, " "))
+	if err := irc.conn.WriteMessage(websocket.TextMessage, []byte(msgStr)); err != nil {
 		return err
 	}
 
-	if !strings.HasPrefix(message, "PASS") {
+	if message.Command != "PASS" {
 		log.Printf("< %s", message)
 	}
 	return nil
+}
+
+// TODO does this belong here?
+// PrivMsg sends a "private message" to the IRC, no prefix attached
+func (irc *Irc) PrivMsg(channel, message string) error {
+	msg := Message{
+		Prefix:  "",
+		Command: "PRIVMSG",
+		Params:  []string{channel, ":" + message},
+	}
+
+	return irc.Write(msg)
 }
 
 func (irc *Irc) Close() {

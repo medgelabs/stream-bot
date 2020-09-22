@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"medgebot/irc"
 	"os"
@@ -14,27 +13,33 @@ func main() {
 	nick := "medgelabs"
 	token := os.Getenv("TWITCH_TOKEN")
 
-	irc := irc.NewClient()
-	if err := irc.Connect("wss", "irc-ws.chat.twitch.tv:443"); err != nil {
+	client := irc.NewClient()
+	if err := client.Connect("wss", "irc-ws.chat.twitch.tv:443"); err != nil {
 		log.Fatalf("FATAL: connect - %s", err)
 	}
-	defer irc.Close()
+	defer client.Close()
 
-	passCmd := fmt.Sprintf("PASS %s", token)
-	if err := irc.Write(passCmd); err != nil {
+	passCmd := irc.Message{
+		Command: "PASS",
+		Params:  []string{token},
+	}
+	if err := client.Write(passCmd); err != nil {
 		log.Fatalf("FATAL: send PASS failed: %s", err)
 	}
 	log.Println("< PASS ***")
 
-	nickCmd := fmt.Sprintf("NICK %s", nick)
-	if err := irc.Write(nickCmd); err != nil {
+	nickCmd := irc.Message{
+		Command: "NICK",
+		Params:  []string{nick},
+	}
+	if err := client.Write(nickCmd); err != nil {
 		log.Fatalf("FATAL: send NICK failed: %s", err)
 	}
 
 	// Read goroutine for the main chat stream
 	go func() {
 		for {
-			msg, err := irc.Read()
+			msg, err := client.Read()
 			if err != nil {
 				log.Println("ERROR: read from connection - " + err.Error())
 				break
@@ -43,7 +48,12 @@ func main() {
 
 			// PING / PONG must be honored...or we get disconnected
 			if msg.Command == "PING" {
-				if err := irc.Write("PONG " + strings.Join(msg.Params, " ")); err != nil {
+				pong := irc.Message{
+					Command: "PONG",
+					Params:  msg.Params,
+				}
+
+				if err := client.Write(pong); err != nil {
 					log.Printf("ERROR: send PONG failed: %s", err)
 				}
 			}
@@ -56,13 +66,15 @@ func main() {
 				// Command processing
 				// TODO make better
 				if strings.HasPrefix(contents, "!hello") {
-					if err := irc.Write("PRIVMSG " + channel + " :WORLD!"); err != nil {
+					if err := client.PrivMsg(channel, "WORLD"); err != nil {
+						// if err := client.Write(msg); err != nil {
+						// if err := client.Write("PRIVMSG " + channel + " :WORLD!"); err != nil {
 						log.Printf("ERROR: send failed: %s", err)
 					}
 				}
 
 				if strings.HasPrefix(contents, "!sorcery") {
-					if err := irc.Write("PRIVMSG " + channel + " :!so @SorceryAndSarcasm"); err != nil {
+					if err := client.PrivMsg(channel, "!so @SorceryAndSarcasm"); err != nil {
 						log.Printf("ERROR: send failed: %s", err)
 					}
 				}
@@ -71,8 +83,11 @@ func main() {
 	}()
 
 	time.Sleep(time.Second)
-	joinCmd := fmt.Sprintf("JOIN %s", channel)
-	if err := irc.Write(joinCmd); err != nil {
+	joinCmd := irc.Message{
+		Command: "JOIN",
+		Params:  []string{channel},
+	}
+	if err := client.Write(joinCmd); err != nil {
 		log.Fatalf("FATAL: send JOIN failed: %s", err)
 	}
 
