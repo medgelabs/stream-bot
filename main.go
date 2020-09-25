@@ -19,20 +19,13 @@ func main() {
 	}
 	defer client.Close()
 
-	passCmd := irc.Message{
-		Command: "PASS",
-		Params:  []string{token},
-	}
-	if err := client.Write(passCmd); err != nil {
+	// Authenticate with the IRC
+	if err := client.SendPass(token); err != nil {
 		log.Fatalf("FATAL: send PASS failed: %s", err)
 	}
 	log.Println("< PASS ***")
 
-	nickCmd := irc.Message{
-		Command: "NICK",
-		Params:  []string{nick},
-	}
-	if err := client.Write(nickCmd); err != nil {
+	if err := client.SendNick(nick); err != nil {
 		log.Fatalf("FATAL: send NICK failed: %s", err)
 	}
 
@@ -83,11 +76,8 @@ func main() {
 	}()
 
 	time.Sleep(time.Second)
-	joinCmd := irc.Message{
-		Command: "JOIN",
-		Params:  []string{channel},
-	}
-	if err := client.Write(joinCmd); err != nil {
+
+	if err := client.Join(channel); err != nil {
 		log.Fatalf("FATAL: send JOIN failed: %s", err)
 	}
 

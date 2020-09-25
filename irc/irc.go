@@ -94,6 +94,37 @@ func (irc *Irc) Write(message Message) error {
 }
 
 // TODO does this belong here?
+
+// SendPass sends the PASS command to the IRC
+func (irc *Irc) SendPass(token string) error {
+	passCmd := Message{
+		Command: "PASS",
+		Params:  []string{token},
+	}
+
+	return irc.Write(passCmd)
+}
+
+// SendNick sends the NICK command to the IRC
+func (irc *Irc) SendNick(nick string) error {
+	nickCmd := Message{
+		Command: "NICK",
+		Params:  []string{nick},
+	}
+
+	return irc.Write(nickCmd)
+}
+
+// Join the given IRC channel. Must be called AFTER PASS and NICK
+func (irc *Irc) Join(channel string) error {
+	joinCmd := Message{
+		Command: "JOIN",
+		Params:  []string{channel},
+	}
+
+	return irc.Write(joinCmd)
+}
+
 // PrivMsg sends a "private message" to the IRC, no prefix attached
 func (irc *Irc) PrivMsg(channel, message string) error {
 	msg := Message{
