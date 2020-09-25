@@ -2,84 +2,70 @@ package main
 
 import (
 	"log"
-	"medgebot/irc"
+	"medgebot/bot"
 	"os"
-	"strings"
 	"time"
 )
 
 func main() {
 	channel := "#medgelabs"
 	nick := "medgelabs"
-	token := os.Getenv("TWITCH_TOKEN")
+	password := os.Getenv("TWITCH_TOKEN")
 
-	client := irc.NewClient()
-	if err := client.Connect("wss", "irc-ws.chat.twitch.tv:443"); err != nil {
-		log.Fatalf("FATAL: connect - %s", err)
+	bot := bot.New()
+	if err := bot.Connect(); err != nil {
+		log.Fatalf("FATAL: bot connect - %v", err)
 	}
-	defer client.Close()
+	defer bot.Close()
 
-	// Authenticate with the IRC
-	if err := client.SendPass(token); err != nil {
-		log.Fatalf("FATAL: send PASS failed: %s", err)
+	if err := bot.Authenticate(nick, password); err != nil {
+		log.Fatalf("FATAL: bot authentication failure - %s", err)
 	}
-	log.Println("< PASS ***")
 
-	if err := client.SendNick(nick); err != nil {
-		log.Fatalf("FATAL: send NICK failed: %s", err)
+	if err := bot.Join(channel); err != nil {
+		log.Fatalf("FATAL: bot join channel failed: %s", err)
 	}
+
+	bot.ReadStreamFunc(func(msg string) {
+		log.Printf("> %s", msg)
+	})
 
 	// Read goroutine for the main chat stream
-	go func() {
-		for {
-			msg, err := client.Read()
-			if err != nil {
-				log.Println("ERROR: read from connection - " + err.Error())
-				break
-			}
-			log.Printf("> %s", msg.String())
+	// go func() {
+	// // PING / PONG must be honored...or we get disconnected
+	// if msg.Command == "PING" {
+	// pong := irc.Message{
+	// Command: "PONG",
+	// Params:  msg.Params,
+	// }
 
-			// PING / PONG must be honored...or we get disconnected
-			if msg.Command == "PING" {
-				pong := irc.Message{
-					Command: "PONG",
-					Params:  msg.Params,
-				}
+	// if err := client.Write(pong); err != nil {
+	// log.Printf("ERROR: send PONG failed: %s", err)
+	// }
+	// }
 
-				if err := client.Write(pong); err != nil {
-					log.Printf("ERROR: send PONG failed: %s", err)
-				}
-			}
+	// // Otherwise - handle PRIVMSG
+	// if msg.Command == "PRIVMSG" {
+	// channel := msg.Params[0]
+	// contents := strings.TrimPrefix(strings.Join(msg.Params[1:], " "), ":")
 
-			// Otherwise - handle PRIVMSG
-			if msg.Command == "PRIVMSG" {
-				channel := msg.Params[0]
-				contents := strings.TrimPrefix(strings.Join(msg.Params[1:], " "), ":")
+	// // Command processing
+	// // TODO make better
+	// if strings.HasPrefix(contents, "!hello") {
+	// if err := client.PrivMsg(channel, "WORLD"); err != nil {
+	// // if err := client.Write(msg); err != nil {
+	// // if err := client.Write("PRIVMSG " + channel + " :WORLD!"); err != nil {
+	// log.Printf("ERROR: send failed: %s", err)
+	// }
+	// }
 
-				// Command processing
-				// TODO make better
-				if strings.HasPrefix(contents, "!hello") {
-					if err := client.PrivMsg(channel, "WORLD"); err != nil {
-						// if err := client.Write(msg); err != nil {
-						// if err := client.Write("PRIVMSG " + channel + " :WORLD!"); err != nil {
-						log.Printf("ERROR: send failed: %s", err)
-					}
-				}
-
-				if strings.HasPrefix(contents, "!sorcery") {
-					if err := client.PrivMsg(channel, "!so @SorceryAndSarcasm"); err != nil {
-						log.Printf("ERROR: send failed: %s", err)
-					}
-				}
-			}
-		}
-	}()
-
-	time.Sleep(time.Second)
-
-	if err := client.Join(channel); err != nil {
-		log.Fatalf("FATAL: send JOIN failed: %s", err)
-	}
+	// if strings.HasPrefix(contents, "!sorcery") {
+	// if err := client.PrivMsg(channel, "!so @SorceryAndSarcasm"); err != nil {
+	// log.Printf("ERROR: send failed: %s", err)
+	// }
+	// }
+	// }
+	// }()
 
 	// TODO _no_
 	for {
