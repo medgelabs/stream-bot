@@ -32,18 +32,6 @@ func main() {
 
 	// Read goroutine for the main chat stream
 	// go func() {
-	// // PING / PONG must be honored...or we get disconnected
-	// if msg.Command == "PING" {
-	// pong := irc.Message{
-	// Command: "PONG",
-	// Params:  msg.Params,
-	// }
-
-	// if err := client.Write(pong); err != nil {
-	// log.Printf("ERROR: send PONG failed: %s", err)
-	// }
-	// }
-
 	// // Otherwise - handle PRIVMSG
 	// if msg.Command == "PRIVMSG" {
 	// channel := msg.Params[0]

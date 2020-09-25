@@ -8,6 +8,7 @@ import (
 
 type Bot struct {
 	client *irc.Irc
+	// TODO maybe a channel of chat lines?
 }
 
 func New() Bot {
@@ -23,6 +24,10 @@ func (bot *Bot) Connect() error {
 		log.Printf("ERROR: bot connect - %s", err)
 		return err
 	}
+
+	// make(chan irc.Message)
+	// go readChat(messageChan)
+	// go pingPong(messageChan)
 
 	return nil
 }
@@ -78,7 +83,31 @@ func (bot *Bot) SendMessage(channel, message string) string {
 	return fmt.Sprintf("PRIVMSG #%s %s", channel, message)
 }
 
-// Pong responds to Ping heartbeats
-func (bot *Bot) Pong() error {
-	return nil
+// readChat Reads from the client and passes the parsed messages to the stream channel
+func (bot *Bot) readChat(stream chan<- irc.Message) {
+	for {
+		msg, err := bot.client.Read()
+		if err != nil {
+			log.Println("ERROR: read - " + err.Error())
+			break
+		}
+		stream <- msg
+	}
+}
+
+// PingPong responds to Ping heartbeats from the server so we don't get disconnected
+func (bot *Bot) pingPong(stream chan irc.Message) {
+	select {
+	case msg := <-stream:
+		if msg.Command == "PING" {
+			pong := irc.Message{
+				Command: "PONG",
+				Params:  msg.Params,
+			}
+
+			if err := bot.client.Write(pong); err != nil {
+				log.Printf("ERROR: send PONG failed: %s", err)
+			}
+		}
+	}
 }
