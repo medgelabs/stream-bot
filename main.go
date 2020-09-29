@@ -13,6 +13,9 @@ func main() {
 	password := os.Getenv("TWITCH_TOKEN")
 
 	bot := bot.New()
+	bot.RegisterPingPong()
+	bot.RegisterReadLogger()
+
 	if err := bot.Connect(); err != nil {
 		log.Fatalf("FATAL: bot connect - %v", err)
 	}
@@ -25,10 +28,6 @@ func main() {
 	if err := bot.Join(channel); err != nil {
 		log.Fatalf("FATAL: bot join channel failed: %s", err)
 	}
-
-	bot.ReadStreamFunc(func(msg string) {
-		log.Printf("> %s", msg)
-	})
 
 	// Read goroutine for the main chat stream
 	// go func() {

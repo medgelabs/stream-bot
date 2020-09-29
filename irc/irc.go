@@ -76,8 +76,65 @@ func (irc *Irc) Read() (Message, error) {
 	return msg, nil
 }
 
+// SendPass sends the PASS command to the IRC
+func (irc *Irc) SendPass(token string) error {
+	passCmd := Message{
+		Command: "PASS",
+		Params:  []string{token},
+	}
+
+	return irc.write(passCmd)
+}
+
+// SendNick sends the NICK command to the IRC
+func (irc *Irc) SendNick(nick string) error {
+	nickCmd := Message{
+		Command: "NICK",
+		Params:  []string{nick},
+	}
+
+	return irc.write(nickCmd)
+}
+
+// Join the given IRC channel. Must be called AFTER PASS and NICK
+func (irc *Irc) Join(channel string) error {
+	joinCmd := Message{
+		Command: "JOIN",
+		Params:  []string{channel},
+	}
+
+	return irc.write(joinCmd)
+}
+
+// PrivMsg sends a "private message" to the IRC, no prefix attached
+func (irc *Irc) PrivMsg(channel, message string) error {
+	msg := Message{
+		Prefix:  "",
+		Command: "PRIVMSG",
+		Params:  []string{channel, ":" + message},
+	}
+
+	return irc.write(msg)
+}
+
+// SendPong reponds to the Ping heartbeat with the given body
+func (irc *Irc) SendPong(body []string) error {
+	msg := Message{
+		Prefix:  "",
+		Command: "PONG",
+		Params:  body,
+	}
+
+	return irc.write(msg)
+}
+
+func (irc *Irc) Close() {
+	irc.conn.Close()
+	log.Println("INFO: connection closed")
+}
+
 // Write writes a message to the IRC stream
-func (irc *Irc) Write(message Message) error {
+func (irc *Irc) write(message Message) error {
 	if irc.conn == nil {
 		return fmt.Errorf("Irc.conn is nil. Did you forget to call Irc.Connect()?")
 	}
@@ -91,52 +148,4 @@ func (irc *Irc) Write(message Message) error {
 		log.Printf("< %s", message)
 	}
 	return nil
-}
-
-// TODO does this belong here?
-
-// SendPass sends the PASS command to the IRC
-func (irc *Irc) SendPass(token string) error {
-	passCmd := Message{
-		Command: "PASS",
-		Params:  []string{token},
-	}
-
-	return irc.Write(passCmd)
-}
-
-// SendNick sends the NICK command to the IRC
-func (irc *Irc) SendNick(nick string) error {
-	nickCmd := Message{
-		Command: "NICK",
-		Params:  []string{nick},
-	}
-
-	return irc.Write(nickCmd)
-}
-
-// Join the given IRC channel. Must be called AFTER PASS and NICK
-func (irc *Irc) Join(channel string) error {
-	joinCmd := Message{
-		Command: "JOIN",
-		Params:  []string{channel},
-	}
-
-	return irc.Write(joinCmd)
-}
-
-// PrivMsg sends a "private message" to the IRC, no prefix attached
-func (irc *Irc) PrivMsg(channel, message string) error {
-	msg := Message{
-		Prefix:  "",
-		Command: "PRIVMSG",
-		Params:  []string{channel, ":" + message},
-	}
-
-	return irc.Write(msg)
-}
-
-func (irc *Irc) Close() {
-	irc.conn.Close()
-	log.Println("INFO: connection closed")
 }
