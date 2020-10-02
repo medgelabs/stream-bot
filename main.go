@@ -30,31 +30,6 @@ func main() {
 		log.Fatalf("FATAL: bot join channel failed: %s", err)
 	}
 
-	// Read goroutine for the main chat stream
-	// go func() {
-	// // Otherwise - handle PRIVMSG
-	// if msg.Command == "PRIVMSG" {
-	// channel := msg.Params[0]
-	// contents := strings.TrimPrefix(strings.Join(msg.Params[1:], " "), ":")
-
-	// // Command processing
-	// // TODO make better
-	// if strings.HasPrefix(contents, "!hello") {
-	// if err := client.PrivMsg(channel, "WORLD"); err != nil {
-	// // if err := client.Write(msg); err != nil {
-	// // if err := client.Write("PRIVMSG " + channel + " :WORLD!"); err != nil {
-	// log.Printf("ERROR: send failed: %s", err)
-	// }
-	// }
-
-	// if strings.HasPrefix(contents, "!sorcery") {
-	// if err := client.PrivMsg(channel, "!so @SorceryAndSarcasm"); err != nil {
-	// log.Printf("ERROR: send failed: %s", err)
-	// }
-	// }
-	// }
-	// }()
-
 	// TODO _no_
 	for {
 		time.Sleep(time.Second)
