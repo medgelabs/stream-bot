@@ -16,13 +16,14 @@ type Irc struct {
 
 // Message represents a line of text from the IRC stream
 type Message struct {
-	Prefix  string
+	Tags    []string
+	User    string
 	Command string
 	Params  []string
 }
 
 func (msg Message) String() string {
-	return fmt.Sprintf("%s %s %s", msg.Prefix, msg.Command, strings.Join(msg.Params, " "))
+	return fmt.Sprintf("%s %s %s", msg.User, msg.Command, strings.Join(msg.Params, " "))
 }
 
 func NewClient() *Irc {
@@ -56,18 +57,36 @@ func (irc *Irc) Read() (Message, error) {
 	msgStr := strings.TrimSpace(string(message))
 	tokens := strings.Split(msgStr, " ")
 
+	// If tags are present, parse them out
+	if strings.HasPrefix(tokens[0], "@") {
+		tags := strings.Split(strings.TrimLeft(tokens[0], "@"), ";")
+
+		// Username extraction
+		rawUsername := strings.Split(tokens[1], ":")[1]
+		username := strings.Split(rawUsername, "!")[0]
+
+		return Message{
+			Tags:    tags,
+			User:    username,
+			Command: tokens[2],
+			Params:  tokens[3:],
+		}, nil
+	}
+
+	// No tags
 	var msg Message
+
 	if strings.HasPrefix(tokens[0], ":") {
+		rawUsername := strings.Split(tokens[0], ":")[1]
+		username := strings.Split(rawUsername, "!")[0]
+
 		msg = Message{
-			// TODO this will break when prefix > 1 token
-			// Need to add processing for space-delimited prefix as well
-			Prefix:  tokens[0],
+			User:    username,
 			Command: tokens[1],
 			Params:  tokens[2:],
 		}
 	} else {
 		msg = Message{
-			Prefix:  "",
 			Command: tokens[0],
 			Params:  tokens[1:], // TODO are there any commands we need to handle that have no params?
 		}
@@ -106,10 +125,18 @@ func (irc *Irc) Join(channel string) error {
 	return irc.write(joinCmd)
 }
 
+func (irc *Irc) CapReq(capability string) error {
+	msg := Message{
+		Command: "CAP REQ",
+		Params:  []string{":" + capability},
+	}
+
+	return irc.write(msg)
+}
+
 // PrivMsg sends a "private message" to the IRC, no prefix attached
 func (irc *Irc) PrivMsg(channel, message string) error {
 	msg := Message{
-		Prefix:  "",
 		Command: "PRIVMSG",
 		Params:  []string{channel, ":" + message},
 	}
@@ -120,7 +147,6 @@ func (irc *Irc) PrivMsg(channel, message string) error {
 // SendPong reponds to the Ping heartbeat with the given body
 func (irc *Irc) SendPong(body []string) error {
 	msg := Message{
-		Prefix:  "",
 		Command: "PONG",
 		Params:  body,
 	}
