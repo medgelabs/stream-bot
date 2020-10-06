@@ -15,62 +15,92 @@
         margin: 0;
       }
 
-      .centered {
-        display: grid;
-        align-items: center;
+      html {
+        font-family: sans-serif;
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
       }
 
-      nav {
+      body {
+        font-family: sans-serif;
+        font-size: 18px;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+
+      header {
         display: grid;
-        grid-template-columns: 0.5fr 3fr 1fr;
+        grid-template-columns: 1fr 3fr 1fr;
         grid-gap: 0px 0px;
         grid-template-areas: "logo nav user";
-
+        align-items: center;
         width: 100%;
-        height: 3em;
+        height: 4em;
         background-color: #000;
-        color: #fff;
+        color: #f5f5f5;
       }
 
-      nav .logo {
+      header .logo {
         grid-area: logo;
         text-align: center;
         font-size: 2em;
       }
 
-      nav ul {
+      nav {
         grid-area: nav;
         display: flex;
-        justify-content: space-evenly;
+        justify-content: center;
         align-items: center;
+        height: 100%;
+      }
+
+      nav ul {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
         height: 100%;
       }
 
       nav ul li {
         list-style-type: none;
+        border-left: 1px solid #333;
+        padding: 0 1em;
+        height: 100%;
+        padding-top: 1.5em;
       }
 
-      nav ul li a {
+      nav ul li:last-child {
+        border-right: 1px solid #333;
+      }
+
+      nav a {
         color: #fff;
         text-decoration: none;
       }
 
-      nav ul li a:hover {
+      nav a:hover {
         font-weight: bolder;
       }
 
-      nav .user {
-        padding-right: 2em;
+      header .user {
+        padding-right: 1em;
         grid-area: user;
         text-align: right;
       }
 
       .metrics-cards {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(1, 1fr);
         grid-gap: 2em;
         border-radius: 2rem;
         margin: 1em;
+      }
+
+      @media screen and (min-width: 768px) {
+        .metrics-cards {
+          grid-template-columns: repeat(5, 1fr);
+        }
       }
 
       .card {
@@ -92,16 +122,19 @@
   </head>
   <body>
 
-    <nav>
-      <div class="centered logo">M</div>
+    <header>
+      <div class="logo">M</div>
 
-      <ul>
-        <li><a href="#">Home</a></li>
-        <li><a href="#">Trace</a></li>
-      </ul>
+      <nav>
+        <ul>
+          <li><a href="#">Home</a></li>
+          <li><a href="#">Trace</a></li>
+        </ul>
+      </nav>
 
-      <div class="centered user">Medge</div>
-    </nav>
+      <div class="user">Medge</div>
+    </header>
+
 
     <main>
       <section class="metrics-cards">
