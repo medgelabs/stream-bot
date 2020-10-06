@@ -15,62 +15,112 @@
         margin: 0;
       }
 
-      .centered {
-        display: grid;
-        align-items: center;
+      html {
+        font-family: sans-serif;
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
       }
 
-      nav {
+      body {
+        font-family: sans-serif;
+        font-size: 18px;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+
+      header {
         display: grid;
-        grid-template-columns: 0.5fr 3fr 1fr;
+        grid-template-columns: 1fr 3fr 1fr;
         grid-gap: 0px 0px;
         grid-template-areas: "logo nav user";
-
+        align-items: center;
         width: 100%;
-        height: 3em;
+        height: 4em;
         background-color: #000;
-        color: #fff;
+        color: #f5f5f5;
       }
 
-      nav .logo {
+      header .logo {
         grid-area: logo;
         text-align: center;
         font-size: 2em;
       }
 
-      nav ul {
+      nav {
         grid-area: nav;
         display: flex;
-        justify-content: space-evenly;
+        justify-content: center;
         align-items: center;
+        height: 100%;
+      }
+
+      nav ul {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
         height: 100%;
       }
 
       nav ul li {
         list-style-type: none;
+        border-left: 1px solid #333;
+        padding: 0 1em;
+        height: 100%;
+        padding-top: 1.5em;
       }
 
-      nav ul li a {
+      nav ul li:last-child {
+        border-right: 1px solid #333;
+      }
+
+      nav a {
         color: #fff;
         text-decoration: none;
       }
 
-      nav ul li a:hover {
+      nav a:hover {
         font-weight: bolder;
       }
 
-      nav .user {
-        padding-right: 2em;
+      header .user {
+        padding-right: 1em;
         grid-area: user;
         text-align: right;
       }
 
-      .metrics-cards {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        grid-gap: 2em;
-        border-radius: 2rem;
+      @media screen and (min-width: 768px) {
+        main {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        main > * {
+          grid-column: 2;
+        }
+
+        .metrics-cards {
+          display: grid;
+          grid-template-columns: repeat(1, 1fr);
+          grid-gap: 2em;
+          grid-template-columns: repeat(5, 1fr);
+        }
+      }
+
+      .metrics-cards, .chatbox {
         margin: 1em;
+      }
+
+      .chatbox ul {
+        text-align: left;
+      }
+
+      .chatbox ul li {
+        list-style-type: none;
+      }
+
+      .chatbox .user {
+        color: #ffe224;
       }
 
       .card {
@@ -79,7 +129,7 @@
         border-radius: 6px;
         box-shadow: 0 .5em 1em -.125em rgba(10,10,10,.1),0 0 0 1px rgba(10,10,10,.02);
         color: #4a4a4a;
-        display: block;
+        margin-bottom: 1em;
         padding: 1.25rem;
         text-align: center;
       }
@@ -88,47 +138,61 @@
         margin-bottom: 1em;
       }
 
+      footer {
+        text-align: center;
+      }
+
     </style>
   </head>
   <body>
 
-    <nav>
-      <div class="centered logo">M</div>
+    <header>
+      <div class="logo">M</div>
 
-      <ul>
-        <li><a href="#">Home</a></li>
-        <li><a href="#">Trace</a></li>
-      </ul>
+      <nav>
+        <ul>
+          <li><a href="#">Home</a></li>
+          <li><a href="#">Trace</a></li>
+        </ul>
+      </nav>
 
-      <div class="centered user">Medge</div>
-    </nav>
+      <div class="user">Medge</div>
+    </header>
+
 
     <main>
       <section class="metrics-cards">
-
         <div id="messages" class="card">
           <h3># Messages</h3>
           <p>20</p>
         </div>
 
-        <div id="messages" class="card">
+        <div id="bits" class="card">
           <h3>Top Bits</h3>
           <p>dal3xx</p>
         </div>
 
-        <div id="messages" class="card">
+        <div id="uptime" class="card">
           <h3>Uptime</h3>
           <p>2h 24m</p>
         </div>
 
-        <div id="messages" class="card">
-          <h3>Best Mod</h3>
+        <div id="shoutout" class="card">
+          <h3>Shout Out</h3>
           <p>@SorceryAndSarcasm</p>
         </div>
-
       </section>
-      <section class="chatbox">
 
+      <section class="chatbox">
+        <div id="chatbox" class="full card">
+          <ul>
+            <li><span class="user">ShoryukenPizza</span>: HYPE HYPE HYPE</li>
+            <li><span class="user">ShoryukenPizza</span>: HYPE HYPE HYPE HYPE HYPE HYPE HYPE HYPE HYPE</li>
+            <li><span class="user">ShoryukenPizza</span>: HYPE HYPE HYPE</li>
+            <li><span class="user">ShoryukenPizza</span>: HYPE HYPE HYPE</li>
+            <li><span class="user">ShoryukenPizza</span>: HYPE HYPE HYPE</li>
+          </ul>
+        </div>
       </section>
     </main>
 
