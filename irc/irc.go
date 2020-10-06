@@ -58,39 +58,26 @@ func (irc *Irc) Read() (Message, error) {
 	tokens := strings.Split(msgStr, " ")
 
 	// If tags are present, parse them out
-	if strings.HasPrefix(tokens[0], "@") {
-		tags := strings.Split(strings.TrimLeft(tokens[0], "@"), ";")
+	msg := Message{}
+	cursor := 0
 
-		// Username extraction
-		rawUsername := strings.Split(tokens[1], ":")[1]
-		username := strings.Split(rawUsername, "!")[0]
-
-		return Message{
-			Tags:    tags,
-			User:    username,
-			Command: tokens[2],
-			Params:  tokens[3:],
-		}, nil
+	// Tags
+	if strings.HasPrefix(tokens[cursor], "@") {
+		msg.Tags = strings.Split(strings.TrimLeft(tokens[cursor], "@"), ";")
+		cursor++
 	}
 
-	// No tags
-	var msg Message
-
-	if strings.HasPrefix(tokens[0], ":") {
-		rawUsername := strings.Split(tokens[0], ":")[1]
+	// Prefix, therefore parse username
+	if strings.HasPrefix(tokens[cursor], ":") {
+		rawUsername := strings.Split(tokens[cursor], ":")[1]
 		username := strings.Split(rawUsername, "!")[0]
-
-		msg = Message{
-			User:    username,
-			Command: tokens[1],
-			Params:  tokens[2:],
-		}
-	} else {
-		msg = Message{
-			Command: tokens[0],
-			Params:  tokens[1:], // TODO are there any commands we need to handle that have no params?
-		}
+		msg.User = username
+		cursor++
 	}
+
+	// Remaining cursor points should be Command and Params
+	msg.Command = tokens[cursor]
+	msg.Params = tokens[cursor+1:]
 
 	return msg, nil
 }
