@@ -89,18 +89,38 @@
         text-align: right;
       }
 
-      .metrics-cards {
-        display: grid;
-        grid-template-columns: repeat(1, 1fr);
-        grid-gap: 2em;
-        border-radius: 2rem;
+      @media screen and (min-width: 768px) {
+        main {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        main > * {
+          grid-column: 2;
+        }
+
+        .metrics-cards {
+          display: grid;
+          grid-template-columns: repeat(1, 1fr);
+          grid-gap: 2em;
+          grid-template-columns: repeat(5, 1fr);
+        }
+      }
+
+      .metrics-cards, .chatbox {
         margin: 1em;
       }
 
-      @media screen and (min-width: 768px) {
-        .metrics-cards {
-          grid-template-columns: repeat(5, 1fr);
-        }
+      .chatbox ul {
+        text-align: left;
+      }
+
+      .chatbox ul li {
+        list-style-type: none;
+      }
+
+      .chatbox .user {
+        color: #ffe224;
       }
 
       .card {
@@ -109,13 +129,17 @@
         border-radius: 6px;
         box-shadow: 0 .5em 1em -.125em rgba(10,10,10,.1),0 0 0 1px rgba(10,10,10,.02);
         color: #4a4a4a;
-        display: block;
+        margin-bottom: 1em;
         padding: 1.25rem;
         text-align: center;
       }
 
       .card h3 {
         margin-bottom: 1em;
+      }
+
+      footer {
+        text-align: center;
       }
 
     </style>
@@ -138,30 +162,37 @@
 
     <main>
       <section class="metrics-cards">
-
         <div id="messages" class="card">
           <h3># Messages</h3>
           <p>20</p>
         </div>
 
-        <div id="messages" class="card">
+        <div id="bits" class="card">
           <h3>Top Bits</h3>
           <p>dal3xx</p>
         </div>
 
-        <div id="messages" class="card">
+        <div id="uptime" class="card">
           <h3>Uptime</h3>
           <p>2h 24m</p>
         </div>
 
-        <div id="messages" class="card">
-          <h3>Best Mod</h3>
+        <div id="shoutout" class="card">
+          <h3>Shout Out</h3>
           <p>@SorceryAndSarcasm</p>
         </div>
-
       </section>
-      <section class="chatbox">
 
+      <section class="chatbox">
+        <div id="chatbox" class="full card">
+          <ul>
+            <li><span class="user">ShoryukenPizza</span>: HYPE HYPE HYPE</li>
+            <li><span class="user">ShoryukenPizza</span>: HYPE HYPE HYPE HYPE HYPE HYPE HYPE HYPE HYPE</li>
+            <li><span class="user">ShoryukenPizza</span>: HYPE HYPE HYPE</li>
+            <li><span class="user">ShoryukenPizza</span>: HYPE HYPE HYPE</li>
+            <li><span class="user">ShoryukenPizza</span>: HYPE HYPE HYPE</li>
+          </ul>
+        </div>
       </section>
     </main>
 
