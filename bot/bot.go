@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"fmt"
 	"log"
 	"medgebot/irc"
 	"sync"
@@ -33,11 +32,10 @@ func (bot *Bot) Connect() error {
 
 	go bot.readChat()
 
-	if err := bot.client.CapReq("twitch.tv/tags"); err != nil {
-		log.Printf("ERROR: send CAP REQ failed: %s", err)
-		return err
-	}
-	log.Println("< CAP REQ: twitch.tv/tags")
+	// if err := bot.client.CapReq("twitch.tv/tags"); err != nil {
+	// log.Printf("ERROR: send CAP REQ failed: %s", err)
+	// return err
+	// }
 
 	return nil
 }
@@ -66,16 +64,15 @@ func (bot *Bot) Authenticate(nick, password string) error {
 // Join joins to a specific channel on the IRC
 func (bot *Bot) Join(channel string) error {
 	err := bot.client.Join(channel)
-	if err == nil {
-		bot.channel = channel
-	}
+	bot.channel = channel
 
 	return err
 }
 
 // PrivMsg sends a message to the given channel, without prefix
-func (bot *Bot) SendMessage(message string) string {
-	return fmt.Sprintf("PRIVMSG #%s %s", bot.channel, message)
+func (bot *Bot) SendMessage(message string) error {
+	// TODO exponential backoff retry logic sorely needed
+	return bot.client.PrivMsg(bot.channel, message)
 }
 
 // RegisterHandler registers a function that will be called concurrently when a message is received

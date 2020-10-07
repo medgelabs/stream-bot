@@ -16,6 +16,7 @@ func main() {
 	bot.RegisterPingPong()
 	bot.RegisterReadLogger()
 	bot.HandleCommands()
+	bot.RegisterGreeter()
 
 	if err := bot.Connect(); err != nil {
 		log.Fatalf("FATAL: bot connect - %v", err)
