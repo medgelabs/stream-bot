@@ -5,24 +5,27 @@ import (
 	"log"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
 
 // Irc client
 type Irc struct {
+	sync.Mutex
 	conn *websocket.Conn
 }
 
 // Message represents a line of text from the IRC stream
 type Message struct {
-	Prefix  string
+	Tags    []string
+	User    string
 	Command string
 	Params  []string
 }
 
 func (msg Message) String() string {
-	return fmt.Sprintf("%s %s %s", msg.Prefix, msg.Command, strings.Join(msg.Params, " "))
+	return fmt.Sprintf("%s %s %s", msg.User, msg.Command, strings.Join(msg.Params, " "))
 }
 
 func NewClient() *Irc {
@@ -56,22 +59,27 @@ func (irc *Irc) Read() (Message, error) {
 	msgStr := strings.TrimSpace(string(message))
 	tokens := strings.Split(msgStr, " ")
 
-	var msg Message
-	if strings.HasPrefix(tokens[0], ":") {
-		msg = Message{
-			// TODO this will break when prefix > 1 token
-			// Need to add processing for space-delimited prefix as well
-			Prefix:  tokens[0],
-			Command: tokens[1],
-			Params:  tokens[2:],
-		}
-	} else {
-		msg = Message{
-			Prefix:  "",
-			Command: tokens[0],
-			Params:  tokens[1:], // TODO are there any commands we need to handle that have no params?
-		}
+	// If tags are present, parse them out
+	msg := Message{}
+	cursor := 0
+
+	// Tags
+	if strings.HasPrefix(tokens[cursor], "@") {
+		msg.Tags = strings.Split(strings.TrimLeft(tokens[cursor], "@"), ";")
+		cursor++
 	}
+
+	// Prefix, therefore parse username
+	if strings.HasPrefix(tokens[cursor], ":") {
+		rawUsername := strings.Split(tokens[cursor], ":")[1]
+		username := strings.Split(rawUsername, "!")[0]
+		msg.User = username
+		cursor++
+	}
+
+	// Remaining cursor points should be Command and Params
+	msg.Command = tokens[cursor]
+	msg.Params = tokens[cursor+1:]
 
 	return msg, nil
 }
@@ -106,10 +114,18 @@ func (irc *Irc) Join(channel string) error {
 	return irc.write(joinCmd)
 }
 
+func (irc *Irc) CapReq(capability string) error {
+	msg := Message{
+		Command: "CAP REQ",
+		Params:  []string{":" + capability},
+	}
+
+	return irc.write(msg)
+}
+
 // PrivMsg sends a "private message" to the IRC, no prefix attached
 func (irc *Irc) PrivMsg(channel, message string) error {
 	msg := Message{
-		Prefix:  "",
 		Command: "PRIVMSG",
 		Params:  []string{channel, ":" + message},
 	}
@@ -120,7 +136,6 @@ func (irc *Irc) PrivMsg(channel, message string) error {
 // SendPong reponds to the Ping heartbeat with the given body
 func (irc *Irc) SendPong(body []string) error {
 	msg := Message{
-		Prefix:  "",
 		Command: "PONG",
 		Params:  body,
 	}
@@ -140,6 +155,10 @@ func (irc *Irc) write(message Message) error {
 	}
 
 	msgStr := fmt.Sprintf("%s %s", message.Command, strings.Join(message.Params, " "))
+
+	// Lock since WriteMessage requires only one concurrent execution
+	irc.Mutex.Lock()
+	defer irc.Mutex.Unlock()
 	if err := irc.conn.WriteMessage(websocket.TextMessage, []byte(msgStr)); err != nil {
 		return err
 	}
