@@ -17,12 +17,16 @@ func main() {
 	chatBot.RegisterReadLogger()
 	chatBot.HandleCommands()
 
-	ledger := bot.NewInMemoryLedger()
+	ledger, err := bot.NewRedisLedger("127.0.0.1", "6379")
+	if err != nil {
+		log.Fatalf("FATAL - connect to Redis - %s", err)
+	}
 
 	// pre-seed names we don't want greeted
 	ledger.Add("tmi.twitch.tv")
 	ledger.Add("streamlabs")
 	ledger.Add(nick)
+	ledger.Add(nick + "@tmi.twitch.tv")
 
 	chatBot.RegisterGreeter(&ledger)
 
