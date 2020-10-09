@@ -5,12 +5,14 @@ import (
 	"log"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
 
 // Irc client
 type Irc struct {
+	sync.Mutex
 	conn *websocket.Conn
 }
 
@@ -153,6 +155,10 @@ func (irc *Irc) write(message Message) error {
 	}
 
 	msgStr := fmt.Sprintf("%s %s", message.Command, strings.Join(message.Params, " "))
+
+	// Lock since WriteMessage requires only one concurrent execution
+	irc.Mutex.Lock()
+	defer irc.Mutex.Unlock()
 	if err := irc.conn.WriteMessage(websocket.TextMessage, []byte(msgStr)); err != nil {
 		return err
 	}

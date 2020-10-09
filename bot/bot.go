@@ -30,6 +30,7 @@ func (bot *Bot) Connect() error {
 		return err
 	}
 
+	// Ensure single concurrent reader, per doc requirements
 	go bot.readChat()
 
 	// if err := bot.client.CapReq("twitch.tv/tags"); err != nil {
