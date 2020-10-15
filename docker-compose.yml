@@ -8,7 +8,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       VAULT_ADDR: http://vault:8200
-      VAULT_TOKEN: ${VAULT_TOKEN}
+      VAULT_TOKEN: "devSimpleToken"
     depends_on:
       - redis
       - vault
@@ -29,6 +29,8 @@ services:
       - IPC_LOCK
     ports:
       - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: "devSimpleToken"
     volumes:
       - ./vault/file:/vault/file
       # - ./vault/config:/vault/config
