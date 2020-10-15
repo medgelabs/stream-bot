@@ -1,12 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"medgebot/bot"
-	"medgebot/secret"
+	persistance "medgebot/internal/pkg/ledger"
+	"medgebot/internal/pkg/storage"
 	"os"
 	"time"
 )
+
+const DefaultSecretPath = "secret/data/twitchToken"
 
 func main() {
 	channel := "#medgelabs"
@@ -15,26 +19,33 @@ func main() {
 	// Ledger for the auto greeter
 	redisHost := os.Getenv("REDIS_HOST")
 	redisPort := os.Getenv("REDIS_PORT")
-	ledger, err := bot.NewRedisLedger(redisHost, redisPort)
+
+	redisEngine, err := persistance.NewRedis(redisHost, redisPort)
 	if err != nil {
 		log.Fatalf("FATAL - connect to Redis - %s", err)
 	}
+	ledger := persistance.New(redisEngine)
 
 	// pre-seed names we don't want greeted
-	ledger.Add("tmi.twitch.tv")
-	ledger.Add("streamlabs")
-	ledger.Add(nick)
-	ledger.Add(nick + "@tmi.twitch.tv")
+	err = ledger.Add("tmi.twitch.tv")
+	err = ledger.Add("streamlabs")
+	err = ledger.Add(nick)
+	err = ledger.Add(nick + "@tmi.twitch.tv")
+	if err != nil {
+		fmt.Printf("error adding username to ledger - %v", err)
+	}
 
 	// Initialize Secrets Store
 	vaultUrl := os.Getenv("VAULT_ADDR")
 	vaultToken := os.Getenv("VAULT_TOKEN")
-	store := secret.NewVaultStore("secret/data/twitchToken")
-	if err := store.Connect(vaultUrl, vaultToken); err != nil {
+
+	vaultEngine, err := storage.NewVault(vaultUrl, vaultToken, DefaultSecretPath)
+	if err != nil {
 		log.Fatalf("FATAL: Vault connect - %v", err)
 	}
+	store := storage.New(vaultEngine)
 
-	password, err := store.GetTwitchToken()
+	password, err := store.GetString("token")
 	if err != nil {
 		log.Fatalf("FATAL: Get Twitch Token from store - %v", err)
 	}
@@ -44,7 +55,7 @@ func main() {
 	chatBot.RegisterPingPong()
 	chatBot.RegisterReadLogger()
 	chatBot.HandleCommands()
-	chatBot.RegisterGreeter(&ledger)
+	chatBot.RegisterGreeter(ledger)
 
 	if err := chatBot.Connect(); err != nil {
 		log.Fatalf("FATAL: bot connect - %v", err)

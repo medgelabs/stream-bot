@@ -1,6 +1,6 @@
 package bot
 
-import "medgebot/irc"
+import "medgebot/internal/pkg/irc"
 
 // Register a handler to handle PING/PONG message exchange
 func (bot *Bot) RegisterPingPong() {

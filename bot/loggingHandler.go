@@ -2,7 +2,7 @@ package bot
 
 import (
 	"log"
-	"medgebot/irc"
+	"medgebot/internal/pkg/irc"
 )
 
 // Prints messages to the console

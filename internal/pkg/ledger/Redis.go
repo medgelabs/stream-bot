@@ -1,4 +1,4 @@
-package bot
+package ledger
 
 import (
 	"fmt"
@@ -7,24 +7,24 @@ import (
 	"github.com/mediocregopher/radix/v3"
 )
 
-type RedisLedger struct {
+type Redis struct {
 	pool                *radix.Pool
 	expireTimeInSeconds int
 }
 
-func NewRedisLedger(host, port string) (RedisLedger, error) {
+func NewRedis(host, port string) (*Redis, error) {
 	pool, err := radix.NewPool("tcp", fmt.Sprintf("%s:%s", host, port), 10)
 	if err != nil {
-		return RedisLedger{}, err
+		return nil, err
 	}
 
-	return RedisLedger{
+	return &Redis{
 		pool:                pool,
 		expireTimeInSeconds: 60 * 60 * 12, // 12 hours
 	}, nil
 }
 
-func (l *RedisLedger) Absent(key string) bool {
+func (l *Redis) absent(key string) bool {
 	var res int
 	err := l.pool.Do(radix.Cmd(&res, "EXISTS", key))
 	if err != nil {
@@ -35,7 +35,7 @@ func (l *RedisLedger) Absent(key string) bool {
 	return res == 0
 }
 
-func (l *RedisLedger) Add(key string) error {
+func (l *Redis) add(key string) error {
 	cmd := radix.FlatCmd(nil, "SET", key, 1, "EX", l.expireTimeInSeconds)
 
 	if err := l.pool.Do(cmd); err != nil {
