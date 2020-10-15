@@ -3,6 +3,7 @@ module medgebot
 go 1.14
 
 require (
+	github.com/frankban/quicktest v1.11.1 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/errwrap v1.1.0 // indirect
