@@ -38,7 +38,9 @@ func (s VaultStore) GetTwitchToken() (string, error) {
 		return "", fmt.Errorf("ERROR: fetch Twitch Token from Store - %v", err)
 	}
 
-	token, ok := secret.Data["token"]
+	// Thanks to shito for pointing this out!
+	dataMap, ok := secret.Data["data"].(map[string]interface{})
+	token, ok := dataMap["token"]
 	if !ok {
 		return "", fmt.Errorf("Twitch Token not found in Vault")
 	}

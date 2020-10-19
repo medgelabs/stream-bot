@@ -29,7 +29,7 @@ func main() {
 	// Initialize Secrets Store
 	vaultUrl := os.Getenv("VAULT_ADDR")
 	vaultToken := os.Getenv("VAULT_TOKEN")
-	store := secret.NewVaultStore("secret/twitchToken")
+	store := secret.NewVaultStore("secret/data/twitchToken")
 	if err := store.Connect(vaultUrl, vaultToken); err != nil {
 		log.Fatalf("FATAL: Vault connect - %v", err)
 	}
