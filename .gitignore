@@ -1,2 +1,4 @@
 vault/file/
 redis-data/
+
+.env
