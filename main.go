@@ -5,6 +5,7 @@ import (
 	"medgebot/bot"
 	"medgebot/secret"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -23,7 +24,9 @@ func main() {
 	// pre-seed names we don't want greeted
 	ledger.Add("tmi.twitch.tv")
 	ledger.Add("streamlabs")
+	ledger.Add("nightbot")
 	ledger.Add(nick)
+	ledger.Add(strings.TrimPrefix(channel, "#")) // Prevent greeting the broadcaster
 	ledger.Add(nick + "@tmi.twitch.tv")
 
 	// Initialize Secrets Store
