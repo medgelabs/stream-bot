@@ -1,22 +1,36 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"medgebot/bot"
+	"medgebot/greeter"
+	"medgebot/ledger"
 	"medgebot/secret"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 func main() {
+
+	// Initialize configuration and read from config.yaml
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("FATAL: read config.yaml - %v", err)
+	}
+
 	channel := "#medgelabs"
 	nick := "medgelabs"
 
 	// Ledger for the auto greeter
 	redisHost := os.Getenv("REDIS_HOST")
 	redisPort := os.Getenv("REDIS_PORT")
-	ledger, err := bot.NewRedisLedger(redisHost, redisPort)
+	ledger, err := ledger.NewRedisLedger(redisHost, redisPort)
 	if err != nil {
 		log.Fatalf("FATAL - connect to Redis - %s", err)
 	}
@@ -42,12 +56,33 @@ func main() {
 		log.Fatalf("FATAL: Get Twitch Token from store - %v", err)
 	}
 
+	// Greeter config
+	var greetConfig greeter.Config
+	confKey := fmt.Sprintf("greeter.%s", strings.Trim(channel, "#"))
+	confSub := viper.Sub(confKey)
+	if confSub == nil {
+		log.Fatalf("FATAL: key %s not found in config", confKey)
+	}
+
+	confSub.Unmarshal(&greetConfig)
+	greetBot := greeter.New(greetConfig, &ledger)
+
+	/*
+
+		confKey := fmt.Sprintf("greeter.%s", strings.Trim(channel, "#"))
+		greetConfig := greeter.Config{
+			MessageFormat: viper.GetString(confKey),
+		}
+
+		greetBot := greeter.New(greetConfig, &ledger)
+	*/
+
 	// Initialize desired state for the bot
 	chatBot := bot.New()
 	chatBot.RegisterPingPong()
 	chatBot.RegisterReadLogger()
 	chatBot.HandleCommands()
-	chatBot.RegisterGreeter(&ledger)
+	chatBot.RegisterGreeter(greetBot)
 
 	if err := chatBot.Connect(); err != nil {
 		log.Fatalf("FATAL: bot connect - %v", err)

@@ -1,27 +1,27 @@
 package bot
 
 import (
-	"fmt"
 	"log"
+	"medgebot/greeter"
 	"medgebot/irc"
 	"strings"
 	"time"
 )
 
-func (bot *Bot) RegisterGreeter(ledger Ledger) {
+func (bot *Bot) RegisterGreeter(greeter greeter.Greeter) {
 	bot.RegisterHandler(func(msg irc.Message) {
 		username := msg.User
 		if strings.TrimSpace(username) == "" {
 			return
 		}
 
-		if ledger.Absent(username) {
+		if greeter.HasNotGreeted(username) {
 			log.Printf("Never seen %s before", username)
-			ledger.Add(username)
+			time.Sleep(3 * time.Second)
 
-			msg := fmt.Sprintf("Welcome @%s!", username)
-			time.Sleep(5 * time.Second)
+			msg := greeter.Greet(username)
 			bot.SendMessage(msg)
+			greeter.RecordGreeting(username)
 		}
 	})
 }

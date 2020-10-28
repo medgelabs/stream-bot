@@ -21,4 +21,5 @@ RUN go build -a -o medgebot main.go
 FROM alpine
 WORKDIR /app
 COPY --from=builder /usr/src/app/medgebot /app/
+COPY --from=builder /usr/src/app/config.yaml /app/
 CMD ["/app/medgebot"]

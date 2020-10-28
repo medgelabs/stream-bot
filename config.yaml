@@ -1,0 +1,7 @@
+greeter:
+  medgelabs:
+    message-format: "Welcome to the lab, %s"
+  sorceryandsarcasm:
+    message-format: "%s sorcer19Hype Welcome!"
+  spookyghostmachine:
+    message-format: "%s spooky127Hype Welcome!"

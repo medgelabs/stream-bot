@@ -1,4 +1,4 @@
-package bot
+package ledger
 
 // InMemoryLedger provides in memory ledger capabilities
 type InMemoryLedger struct {

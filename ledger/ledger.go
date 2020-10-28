@@ -1,4 +1,4 @@
-package bot
+package ledger
 
 // Ledger describes a persistent store of users in the chat
 type Ledger interface {
