@@ -41,6 +41,7 @@ func main() {
 	ledger.Add("nightbot")
 	ledger.Add(nick)
 	ledger.Add(strings.TrimPrefix(channel, "#")) // Prevent greeting the broadcaster
+	ledger.Add(nick + ".tmi.twitch.tv")
 	ledger.Add(nick + "@tmi.twitch.tv")
 
 	// Initialize Secrets Store
