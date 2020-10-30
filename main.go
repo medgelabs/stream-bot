@@ -28,14 +28,21 @@ func main() {
 	nick := "medgelabs"
 
 	// Ledger for the auto greeter
-	redisHost := os.Getenv("REDIS_HOST")
-	redisPort := os.Getenv("REDIS_PORT")
-	ledger, err := ledger.NewRedisLedger(redisHost, redisPort)
+	// redisHost := os.Getenv("REDIS_HOST")
+	// redisPort := os.Getenv("REDIS_PORT")
+	// ledger, err := ledger.NewRedisLedger(redisHost, redisPort)
+	// if err != nil {
+	// log.Fatalf("FATAL: connect to Redis - %s", err)
+	// }
+
+	file, err := os.OpenFile("ledger.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
+	ledger, err := ledger.NewFileLedger(file)
 	if err != nil {
-		log.Fatalf("FATAL - connect to Redis - %s", err)
+		log.Fatalf("FATAL: read ledger file - %v", err)
 	}
 
 	// pre-seed names we don't want greeted
+	// TODO make variadic
 	ledger.Add("tmi.twitch.tv")
 	ledger.Add("streamlabs")
 	ledger.Add("nightbot")
@@ -45,12 +52,13 @@ func main() {
 	ledger.Add(nick + "@tmi.twitch.tv")
 
 	// Initialize Secrets Store
-	vaultUrl := os.Getenv("VAULT_ADDR")
-	vaultToken := os.Getenv("VAULT_TOKEN")
-	store := secret.NewVaultStore("secret/data/twitchToken")
-	if err := store.Connect(vaultUrl, vaultToken); err != nil {
-		log.Fatalf("FATAL: Vault connect - %v", err)
-	}
+	// vaultUrl := os.Getenv("VAULT_ADDR")
+	// vaultToken := os.Getenv("VAULT_TOKEN")
+	// store := secret.NewVaultStore("secret/data/twitchToken")
+	// if err := store.Connect(vaultUrl, vaultToken); err != nil {
+	// log.Fatalf("FATAL: Vault connect - %v", err)
+	// }
+	store := secret.NewEnvStore()
 
 	password, err := store.GetTwitchToken()
 	if err != nil {
