@@ -11,4 +11,4 @@ vault kv put $VAULT_PATH token=${TWITCH_TOKEN}
 export REDIS_HOST=localhost
 export REDIS_PORT=6379
 export VAULT_ADDR=http://localhost:8200
-go run main.go
+go run main.go -channel medgelabs -nick medgelabs

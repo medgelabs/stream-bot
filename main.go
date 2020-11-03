@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"medgebot/bot"
@@ -16,6 +17,23 @@ import (
 
 func main() {
 
+	// channel and nick come from the CLI
+	var channel string
+	var nick string
+	flag.StringVar(&channel, "channel", "", "Channel name, without the #, to join")
+	flag.StringVar(&nick, "nick", "", "Nickname to join Chat with")
+	flag.Parse()
+
+	// Flag error handling
+	if strings.HasPrefix(channel, "#") {
+		log.Fatalln("FATAL: channel cannot start with a #")
+	}
+	channel = fmt.Sprintf("#%s", channel)
+
+	if nick == "" {
+		log.Fatalln("FATAL: nick empty")
+	}
+
 	// Initialize configuration and read from config.yaml
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
@@ -24,22 +42,19 @@ func main() {
 		log.Fatalf("FATAL: read config.yaml - %v", err)
 	}
 
-	channel := "#medgelabs"
-	nick := "medgelabs"
-
 	// Ledger for the auto greeter
-	// redisHost := os.Getenv("REDIS_HOST")
-	// redisPort := os.Getenv("REDIS_PORT")
-	// ledger, err := ledger.NewRedisLedger(redisHost, redisPort)
-	// if err != nil {
-	// log.Fatalf("FATAL: connect to Redis - %s", err)
-	// }
-
-	file, err := os.OpenFile("ledger.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
-	ledger, err := ledger.NewFileLedger(file)
+	redisHost := os.Getenv("REDIS_HOST")
+	redisPort := os.Getenv("REDIS_PORT")
+	ledger, err := ledger.NewRedisLedger(redisHost, redisPort)
 	if err != nil {
-		log.Fatalf("FATAL: read ledger file - %v", err)
+		log.Fatalf("FATAL: connect to Redis - %s", err)
 	}
+
+	// file, err := os.OpenFile("ledger.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
+	// ledger, err := ledger.NewFileLedger(file)
+	// if err != nil {
+	// log.Fatalf("FATAL: read ledger file - %v", err)
+	// }
 
 	// pre-seed names we don't want greeted
 	// TODO make variadic
@@ -52,13 +67,13 @@ func main() {
 	ledger.Add(nick + "@tmi.twitch.tv")
 
 	// Initialize Secrets Store
-	// vaultUrl := os.Getenv("VAULT_ADDR")
-	// vaultToken := os.Getenv("VAULT_TOKEN")
-	// store := secret.NewVaultStore("secret/data/twitchToken")
-	// if err := store.Connect(vaultUrl, vaultToken); err != nil {
-	// log.Fatalf("FATAL: Vault connect - %v", err)
-	// }
-	store := secret.NewEnvStore()
+	vaultUrl := os.Getenv("VAULT_ADDR")
+	vaultToken := os.Getenv("VAULT_TOKEN")
+	store := secret.NewVaultStore("secret/data/twitchToken")
+	if err := store.Connect(vaultUrl, vaultToken); err != nil {
+		log.Fatalf("FATAL: Vault connect - %v", err)
+	}
+	// store := secret.NewEnvStore()
 
 	password, err := store.GetTwitchToken()
 	if err != nil {
@@ -75,16 +90,6 @@ func main() {
 
 	confSub.Unmarshal(&greetConfig)
 	greetBot := greeter.New(greetConfig, &ledger)
-
-	/*
-
-		confKey := fmt.Sprintf("greeter.%s", strings.Trim(channel, "#"))
-		greetConfig := greeter.Config{
-			MessageFormat: viper.GetString(confKey),
-		}
-
-		greetBot := greeter.New(greetConfig, &ledger)
-	*/
 
 	// Initialize desired state for the bot
 	chatBot := bot.New()
