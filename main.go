@@ -8,7 +8,6 @@ import (
 	"medgebot/greeter"
 	"medgebot/ledger"
 	"medgebot/secret"
-	"os"
 	"strings"
 	"time"
 
@@ -22,6 +21,14 @@ func main() {
 	var nick string
 	flag.StringVar(&channel, "channel", "", "Channel name, without the #, to join")
 	flag.StringVar(&nick, "nick", "", "Nickname to join Chat with")
+
+	// Inputs for factories
+	var ledgerType string
+	flag.StringVar(&ledgerType, "ledger", ledger.REDIS, fmt.Sprintf("Ledger type string. Options: %s, %s, %s", ledger.REDIS, ledger.FILE, ledger.MEM))
+
+	var secretStoreType string
+	flag.StringVar(&secretStoreType, "store", secret.VAULT, fmt.Sprintf("Secret Store type string. Options: %s, %s", secret.VAULT, secret.ENV))
+
 	flag.Parse()
 
 	// Flag error handling
@@ -43,18 +50,10 @@ func main() {
 	}
 
 	// Ledger for the auto greeter
-	redisHost := os.Getenv("REDIS_HOST")
-	redisPort := os.Getenv("REDIS_PORT")
-	ledger, err := ledger.NewRedisLedger(redisHost, redisPort)
+	ledger, err := ledger.NewLedger(ledgerType)
 	if err != nil {
-		log.Fatalf("FATAL: connect to Redis - %s", err)
+		log.Fatalf("FATAL: create ledger - %v", err)
 	}
-
-	// file, err := os.OpenFile("ledger.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
-	// ledger, err := ledger.NewFileLedger(file)
-	// if err != nil {
-	// log.Fatalf("FATAL: read ledger file - %v", err)
-	// }
 
 	// pre-seed names we don't want greeted
 	// TODO make variadic
@@ -67,13 +66,10 @@ func main() {
 	ledger.Add(nick + "@tmi.twitch.tv")
 
 	// Initialize Secrets Store
-	vaultUrl := os.Getenv("VAULT_ADDR")
-	vaultToken := os.Getenv("VAULT_TOKEN")
-	store := secret.NewVaultStore("secret/data/twitchToken")
-	if err := store.Connect(vaultUrl, vaultToken); err != nil {
-		log.Fatalf("FATAL: Vault connect - %v", err)
+	store, err := secret.NewSecretStore(secretStoreType)
+	if err != nil {
+		log.Fatalf("FATAL: Create secret store - %v", err)
 	}
-	// store := secret.NewEnvStore()
 
 	password, err := store.GetTwitchToken()
 	if err != nil {
@@ -89,7 +85,7 @@ func main() {
 	}
 
 	confSub.Unmarshal(&greetConfig)
-	greetBot := greeter.New(greetConfig, &ledger)
+	greetBot := greeter.New(greetConfig, ledger)
 
 	// Initialize desired state for the bot
 	chatBot := bot.New()
