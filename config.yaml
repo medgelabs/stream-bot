@@ -2,6 +2,6 @@ greeter:
   medgelabs:
     messageFormat: "Welcome to the lab, %s!"
   sorceryandsarcasm:
-    messageFormat: "%s sorcer19Hype Welcome!"
+    messageFormat: "@%s sorcer19Hype"
   spookyghostmachine:
-    messageFormat: "%s spooky127Hype Welcome!"
+    messageFormat: "@%s spooky127Hype"
