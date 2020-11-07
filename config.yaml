@@ -1,6 +1,6 @@
 greeter:
   medgelabs:
-    messageFormat: "Welcome to the lab, %s!"
+    messageFormat: "Welcome to the lab, @%s!"
   sorceryandsarcasm:
     messageFormat: "@%s sorcer19Hype"
   spookyghostmachine:

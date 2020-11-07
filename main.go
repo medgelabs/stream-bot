@@ -93,6 +93,10 @@ func main() {
 	chatBot.RegisterReadLogger()
 	chatBot.HandleCommands()
 	chatBot.RegisterGreeter(greetBot)
+	// chatBot.RegisterEmoteCounter()
+	// chatBot.RegisterRaidHander()
+	// chatbot.RegisterFollowTracker()
+	// chatbot.RegisterSubscriberTracker()
 
 	if err := chatBot.Connect(); err != nil {
 		log.Fatalf("FATAL: bot connect - %v", err)
