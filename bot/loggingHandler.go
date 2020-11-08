@@ -7,7 +7,9 @@ import (
 
 // Prints messages to the console
 func (bot *Bot) RegisterReadLogger() {
-	bot.RegisterHandler(func(msg irc.Message) {
-		log.Printf("> %s", msg.String())
-	})
+	bot.RegisterHandler(
+		NewHandler(func(msg irc.Message) {
+			log.Printf("> %s", msg.String())
+		}),
+	)
 }

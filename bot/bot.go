@@ -10,7 +10,7 @@ type Bot struct {
 	sync.Mutex
 	client    *irc.Irc
 	channel   string
-	consumers []func(irc.Message)
+	consumers []Handler
 }
 
 func New() Bot {
@@ -19,7 +19,7 @@ func New() Bot {
 	return Bot{
 		client:    client,
 		channel:   "",
-		consumers: []func(irc.Message){},
+		consumers: make([]Handler, 0),
 	}
 }
 
@@ -30,13 +30,14 @@ func (bot *Bot) Connect() error {
 		return err
 	}
 
-	// Ensure single concurrent reader, per doc requirements
-	go bot.readChat()
-
+	// Capabilities required
 	// if err := bot.client.CapReq("twitch.tv/tags"); err != nil {
 	// log.Printf("ERROR: send CAP REQ failed: %s", err)
 	// return err
 	// }
+
+	// Ensure single concurrent reader, per doc requirements
+	go bot.readChat()
 
 	return nil
 }
@@ -77,7 +78,7 @@ func (bot *Bot) SendMessage(message string) error {
 }
 
 // RegisterHandler registers a function that will be called concurrently when a message is received
-func (bot *Bot) RegisterHandler(consumer func(irc.Message)) {
+func (bot *Bot) RegisterHandler(consumer Handler) {
 	bot.Mutex.Lock()
 	defer bot.Mutex.Unlock()
 
@@ -87,6 +88,11 @@ func (bot *Bot) RegisterHandler(consumer func(irc.Message)) {
 
 // readChat Reads from the client and passes the parsed messages to the stream channel
 func (bot *Bot) readChat() {
+	// Spawn goroutines for Handlers
+	for _, consumer := range bot.consumers {
+		go consumer.Listen()
+	}
+
 	for {
 		msg, err := bot.client.Read()
 		if err != nil {
@@ -96,7 +102,7 @@ func (bot *Bot) readChat() {
 
 		bot.Mutex.Lock()
 		for _, consumer := range bot.consumers {
-			go consumer(msg)
+			consumer.Receive(msg)
 		}
 		bot.Mutex.Unlock()
 	}

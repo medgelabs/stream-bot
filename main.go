@@ -111,7 +111,7 @@ func main() {
 		log.Fatalf("FATAL: bot join channel failed: %s", err)
 	}
 
-	// TODO _no_
+	// Keep the process alive
 	for {
 		time.Sleep(time.Second)
 	}
