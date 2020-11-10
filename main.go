@@ -75,6 +75,8 @@ func main() {
 		ledger.Add("tmi.twitch.tv")
 		ledger.Add("streamlabs")
 		ledger.Add("nightbot")
+		ledger.Add("ranaebot")
+		ledger.Add("soundalerts")
 		ledger.Add(nick)
 		ledger.Add(strings.TrimPrefix(channel, "#")) // Prevent greeting the broadcaster
 		ledger.Add(nick + ".tmi.twitch.tv")
