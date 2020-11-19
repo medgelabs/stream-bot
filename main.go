@@ -6,6 +6,7 @@ import (
 	"log"
 	"medgebot/bot"
 	"medgebot/greeter"
+	"medgebot/irc"
 	"medgebot/ledger"
 	"medgebot/secret"
 	"strings"
@@ -56,8 +57,43 @@ func main() {
 
 	// Initialize desired state for the bot
 	chatBot := bot.New()
-	chatBot.RegisterPingPong()
 	chatBot.RegisterReadLogger()
+
+	/// Plugin Registration ///
+
+	// Initialize Secrets Store
+	store, err := secret.NewSecretStore(secretStoreType)
+	if err != nil {
+		log.Fatalf("FATAL: Create secret store - %v", err)
+	}
+
+	password, err := store.GetTwitchToken()
+	if err != nil {
+		log.Fatalf("FATAL: Get Twitch Token from store - %v", err)
+	}
+
+	ircConfig := irc.Config{
+		Scheme:   "wss",
+		Host:     "irc-ws.chat.twitch.tv:443",
+		Nick:     nick,
+		Password: password,
+		Channel:  channel,
+	}
+
+	client := irc.NewClient()
+	defer client.Close()
+
+	go func() {
+		err = client.Start(ircConfig)
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
+	}()
+
+	if err := chatBot.RegisterPlugin(client); err != nil {
+		log.Fatalf("FATAL: failed to register plugin: %s", err)
+	}
+	/// Plugin Registration END ///
 
 	if enableCommands || enableAll {
 		chatBot.HandleCommands()
@@ -95,33 +131,8 @@ func main() {
 		chatBot.RegisterGreeter(greetBot)
 	}
 
-	// chatBot.RegisterEmoteCounter()
-	// chatBot.RegisterRaidHander()
-	// chatbot.RegisterFollowTracker()
-	// chatbot.RegisterSubscriberTracker()
-
-	if err := chatBot.Connect(); err != nil {
+	if err := chatBot.Start(); err != nil {
 		log.Fatalf("FATAL: bot connect - %v", err)
-	}
-	defer chatBot.Close()
-
-	// Initialize Secrets Store
-	store, err := secret.NewSecretStore(secretStoreType)
-	if err != nil {
-		log.Fatalf("FATAL: Create secret store - %v", err)
-	}
-
-	password, err := store.GetTwitchToken()
-	if err != nil {
-		log.Fatalf("FATAL: Get Twitch Token from store - %v", err)
-	}
-
-	if err := chatBot.Authenticate(nick, password); err != nil {
-		log.Fatalf("FATAL: bot authentication failure - %s", err)
-	}
-
-	if err := chatBot.Join(channel); err != nil {
-		log.Fatalf("FATAL: bot join channel failed: %s", err)
 	}
 
 	// Keep the process alive

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/pkg/errors"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -15,8 +17,16 @@ import (
 type Irc struct {
 	sync.Mutex
 	conn           *websocket.Conn
-	inboundEvents  <-chan bot.Event
+	inboundEvents  chan bot.Event
 	outboundEvents chan<- bot.Event
+}
+
+type Config struct {
+	Scheme   string
+	Host     string
+	Nick     string
+	Password string
+	Channel  string
 }
 
 // Message represents a line of text from the IRC stream
@@ -27,14 +37,44 @@ type Message struct {
 	Params  []string
 }
 
+func (irc *Irc) GetId() string {
+	return "irc"
+}
+
+func (irc *Irc) GetInboundChannel() chan<- bot.Event {
+	return irc.inboundEvents
+}
+
+func (irc *Irc) SetOutboundChannel(outbound chan<- bot.Event) {
+	irc.outboundEvents = outbound
+}
+
 func (msg Message) String() string {
 	return fmt.Sprintf("%s %s %s", msg.User, msg.Command, strings.Join(msg.Params, " "))
 }
 
-// TODO inbound/outbound channels
 func NewClient() *Irc {
 	return &Irc{
-		conn: nil,
+		conn:          nil,
+		inboundEvents: make(chan bot.Event),
+	}
+}
+
+func (irc *Irc) Start(config Config) error {
+	if err := irc.Connect(config.Scheme, config.Host); err != nil {
+		return errors.Errorf("ERROR: bot connect - %s", err)
+	}
+
+	if err := irc.Authenticate(config.Nick, config.Password); err != nil {
+		return errors.Errorf("FATAL: bot authentication failure - %s", err)
+	}
+
+	if err := irc.Join(config.Channel); err != nil {
+		return errors.Errorf("FATAL: bot join channel failed: %s", err)
+	}
+
+	for {
+		irc.read()
 	}
 }
 
@@ -109,7 +149,7 @@ func (irc *Irc) sendPong(body []string) {
 }
 
 func (irc *Irc) Close() {
-	irc.conn.Close()
+	_ = irc.conn.Close()
 	log.Println("INFO: connection closed")
 }
 
@@ -152,6 +192,12 @@ func (irc *Irc) read() {
 	if msg.Command == "PING" {
 		irc.sendPong(msg.Params)
 		return
+	}
+
+	irc.outboundEvents <- bot.Event{
+		Type:    bot.CHAT_MSG,
+		Sender:  msg.User,
+		Message: msg.String(),
 	}
 }
 
