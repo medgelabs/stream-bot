@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"errors"
 	"log"
 	"medgebot/irc"
 	"sync"
@@ -8,10 +9,11 @@ import (
 
 type Bot struct {
 	sync.Mutex
-	inboundEvents  <-chan Event
-	outboundEvents chan<- Event
-	channel        string
-	consumers      []Handler
+	events          chan Event
+	channel         string
+	consumers       []Handler
+	inboundPlugins  InboundPluginCollection
+	outboundPlugins OutboundPluginCollection
 
 	client *irc.Irc
 }
@@ -20,10 +22,66 @@ func New() Bot {
 	client := irc.NewClient()
 
 	return Bot{
-		client:    client,
-		channel:   "",
-		consumers: make([]Handler, 0),
+		events:          make(chan Event, 0),
+		client:          client,
+		channel:         "",
+		consumers:       make([]Handler, 0),
+		inboundPlugins:  make(InboundPluginCollection, 0),
+		outboundPlugins: make(OutboundPluginCollection, 0),
 	}
+}
+
+func (bot *Bot) RegisterPlugin(plugin Pluggable) (err error) {
+	err = bot.RegisterInboundPlugin(plugin)
+	if err != nil {
+		return err
+	}
+
+	err = bot.RegisterOutboundPlugin(plugin)
+	if err != nil {
+		return err
+	}
+
+	return
+}
+
+func (bot *Bot) RegisterInboundPlugin(plugin Inbound) error {
+	_, ok := bot.inboundPlugins[plugin.GetId()]
+	if ok {
+		return errors.New("inbound plugin already registered")
+	}
+	plugin.SetOutboundChannel(bot.events)
+	bot.inboundPlugins[plugin.GetId()] = plugin
+
+	return nil
+}
+
+func (bot *Bot) RegisterOutboundPlugin(plugin Outbound) error {
+	_, ok := bot.outboundPlugins[plugin.GetId()]
+	if ok {
+		return errors.New("outbound plugin already registered")
+	}
+
+	bot.outboundPlugins[plugin.GetId()] = plugin
+
+	return nil
+}
+
+func (bot *Bot) sendEvent(evt Event) {
+	for _, plugin := range bot.outboundPlugins {
+		plugin.GetInboundChannel() <- evt
+	}
+}
+
+func (bot *Bot) sendEventToPlugin(id string, evt Event) error {
+	plugin, ok := bot.outboundPlugins[id]
+	if !ok {
+		return errors.New("outbound plugin not registered")
+	}
+
+	plugin.GetInboundChannel() <- evt
+
+	return nil
 }
 
 // Connect to the bot client
@@ -79,7 +137,7 @@ func (bot *Bot) SendMessage(message string) {
 	evt := NewChatEvent()
 	evt.Message = message
 
-	bot.outboundEvents <- evt
+	go bot.sendEvent(evt)
 }
 
 // RegisterHandler registers a function that will be called concurrently when a message is received
@@ -101,7 +159,7 @@ func (bot *Bot) listen() {
 
 	for {
 		select {
-		case evt := <-bot.inboundEvents:
+		case evt := <-bot.events:
 			bot.Mutex.Lock()
 			for _, consumer := range bot.consumers {
 				consumer.Receive(evt)
