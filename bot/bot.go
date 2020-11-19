@@ -8,9 +8,12 @@ import (
 
 type Bot struct {
 	sync.Mutex
-	client    *irc.Irc
-	channel   string
-	consumers []Handler
+	inboundEvents  <-chan Event
+	outboundEvents chan<- Event
+	channel        string
+	consumers      []Handler
+
+	client *irc.Irc
 }
 
 func New() Bot {
@@ -37,7 +40,7 @@ func (bot *Bot) Connect() error {
 	// }
 
 	// Ensure single concurrent reader, per doc requirements
-	go bot.readChat()
+	go bot.listen()
 
 	return nil
 }
@@ -72,9 +75,11 @@ func (bot *Bot) Join(channel string) error {
 }
 
 // PrivMsg sends a message to the given channel, without prefix
-func (bot *Bot) SendMessage(message string) error {
-	// TODO exponential backoff retry logic sorely needed
-	return bot.client.PrivMsg(bot.channel, message)
+func (bot *Bot) SendMessage(message string) {
+	evt := NewChatEvent()
+	evt.Message = message
+
+	bot.outboundEvents <- evt
 }
 
 // RegisterHandler registers a function that will be called concurrently when a message is received
@@ -86,24 +91,24 @@ func (bot *Bot) RegisterHandler(consumer Handler) {
 	bot.consumers = consumers
 }
 
-// readChat Reads from the client and passes the parsed messages to the stream channel
-func (bot *Bot) readChat() {
+// Start listening for Events on the inbound channel and broadcast out
+// to the Handlers
+func (bot *Bot) listen() {
 	// Spawn goroutines for Handlers
 	for _, consumer := range bot.consumers {
 		go consumer.Listen()
 	}
 
 	for {
-		msg, err := bot.client.Read()
-		if err != nil {
-			log.Println("ERROR: read - " + err.Error())
-			break
+		select {
+		case evt := <-bot.inboundEvents:
+			bot.Mutex.Lock()
+			for _, consumer := range bot.consumers {
+				consumer.Receive(evt)
+			}
+			bot.Mutex.Unlock()
+		default:
+			// TODO QUIT message
 		}
-
-		bot.Mutex.Lock()
-		for _, consumer := range bot.consumers {
-			consumer.Receive(msg)
-		}
-		bot.Mutex.Unlock()
 	}
 }

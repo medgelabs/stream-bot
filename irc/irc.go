@@ -3,6 +3,7 @@ package irc
 import (
 	"fmt"
 	"log"
+	"medgebot/bot"
 	"net/url"
 	"strings"
 	"sync"
@@ -13,7 +14,9 @@ import (
 // Irc client
 type Irc struct {
 	sync.Mutex
-	conn *websocket.Conn
+	conn           *websocket.Conn
+	inboundEvents  <-chan bot.Event
+	outboundEvents chan<- bot.Event
 }
 
 // Message represents a line of text from the IRC stream
@@ -28,6 +31,7 @@ func (msg Message) String() string {
 	return fmt.Sprintf("%s %s %s", msg.User, msg.Command, strings.Join(msg.Params, " "))
 }
 
+// TODO inbound/outbound channels
 func NewClient() *Irc {
 	return &Irc{
 		conn: nil,
@@ -47,61 +51,20 @@ func (irc *Irc) Connect(scheme, server string) error {
 	return nil
 }
 
-// Read reads from the IRC stream, one line at a time
-func (irc *Irc) Read() (Message, error) {
-	_, message, err := irc.conn.ReadMessage()
-	if err != nil {
-		// TODO check if conn is open. If not - reconnect?
-		return Message{}, err
+// Authenticate connects to the IRC stream with the given nick and password
+func (irc *Irc) Authenticate(nick, password string) error {
+	if err := irc.sendPass(password); err != nil {
+		log.Printf("ERROR: send PASS failed: %s", err)
+		return err
+	}
+	log.Println("< PASS ***")
+
+	if err := irc.sendNick(nick); err != nil {
+		log.Printf("ERROR: send NICK failed: %s", err)
+		return err
 	}
 
-	// TrimSpace to get rid of /r/n
-	msgStr := strings.TrimSpace(string(message))
-	tokens := strings.Split(msgStr, " ")
-
-	// If tags are present, parse them out
-	msg := Message{}
-	cursor := 0
-
-	// Tags
-	if strings.HasPrefix(tokens[cursor], "@") {
-		msg.Tags = strings.Split(strings.TrimLeft(tokens[cursor], "@"), ";")
-		cursor++
-	}
-
-	// Prefix, therefore parse username
-	if strings.HasPrefix(tokens[cursor], ":") {
-		rawUsername := strings.Split(tokens[cursor], ":")[1]
-		username := strings.Split(rawUsername, "!")[0]
-		msg.User = username
-		cursor++
-	}
-
-	// Remaining cursor points should be Command and Params
-	msg.Command = tokens[cursor]
-	msg.Params = tokens[cursor+1:]
-
-	return msg, nil
-}
-
-// SendPass sends the PASS command to the IRC
-func (irc *Irc) SendPass(token string) error {
-	passCmd := Message{
-		Command: "PASS",
-		Params:  []string{token},
-	}
-
-	return irc.write(passCmd)
-}
-
-// SendNick sends the NICK command to the IRC
-func (irc *Irc) SendNick(nick string) error {
-	nickCmd := Message{
-		Command: "NICK",
-		Params:  []string{nick},
-	}
-
-	return irc.write(nickCmd)
+	return nil
 }
 
 // Join the given IRC channel. Must be called AFTER PASS and NICK
@@ -134,18 +97,82 @@ func (irc *Irc) PrivMsg(channel, message string) error {
 }
 
 // SendPong reponds to the Ping heartbeat with the given body
-func (irc *Irc) SendPong(body []string) error {
+func (irc *Irc) sendPong(body []string) {
 	msg := Message{
 		Command: "PONG",
 		Params:  body,
 	}
 
-	return irc.write(msg)
+	if err := irc.write(msg); err != nil {
+		log.Printf("ERROR: irc.send PONG - %v", err)
+	}
 }
 
 func (irc *Irc) Close() {
 	irc.conn.Close()
 	log.Println("INFO: connection closed")
+}
+
+// Read reads from the IRC stream, one line at a time
+func (irc *Irc) read() {
+	_, message, err := irc.conn.ReadMessage()
+	if err != nil {
+		// TODO check if conn is open. If not - reconnect?
+		log.Printf("ERROR: read irc - %v", err)
+		return
+	}
+
+	// TrimSpace to get rid of /r/n
+	msgStr := strings.TrimSpace(string(message))
+	tokens := strings.Split(msgStr, " ")
+
+	// If tags are present, parse them out
+	msg := Message{}
+	cursor := 0
+
+	// Tags
+	if strings.HasPrefix(tokens[cursor], "@") {
+		msg.Tags = strings.Split(strings.TrimLeft(tokens[cursor], "@"), ";")
+		cursor++
+	}
+
+	// Prefix, therefore parse username
+	if strings.HasPrefix(tokens[cursor], ":") {
+		rawUsername := strings.Split(tokens[cursor], ":")[1]
+		username := strings.Split(rawUsername, "!")[0]
+		msg.User = username
+		cursor++
+	}
+
+	// Remaining cursor points should be Command and Params
+	msg.Command = tokens[cursor]
+	msg.Params = tokens[cursor+1:]
+
+	// Intercept for PING/PONG
+	if msg.Command == "PING" {
+		irc.sendPong(msg.Params)
+		return
+	}
+}
+
+// SendPass sends the PASS command to the IRC
+func (irc *Irc) sendPass(token string) error {
+	passCmd := Message{
+		Command: "PASS",
+		Params:  []string{token},
+	}
+
+	return irc.write(passCmd)
+}
+
+// SendNick sends the NICK command to the IRC
+func (irc *Irc) sendNick(nick string) error {
+	nickCmd := Message{
+		Command: "NICK",
+		Params:  []string{nick},
+	}
+
+	return irc.write(nickCmd)
 }
 
 // Write writes a message to the IRC stream

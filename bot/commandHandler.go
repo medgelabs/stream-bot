@@ -1,29 +1,23 @@
 package bot
 
 import (
-	"log"
-	"medgebot/irc"
 	"strings"
 )
 
 func (bot *Bot) HandleCommands() {
 	bot.RegisterHandler(
-		NewHandler(func(msg irc.Message) {
-			if msg.Command == "PRIVMSG" {
-				contents := strings.TrimPrefix(strings.Join(msg.Params[1:], " "), ":")
+		NewHandler(func(evt Event) {
+			if evt.IsChatEvent() {
+				contents := evt.Message
 
 				// Command processing
 				if strings.HasPrefix(contents, "!hello") {
-					if err := bot.SendMessage("WORLD"); err != nil {
-						log.Printf("ERROR: send failed: %s", err)
-					}
+					bot.SendMessage("WORLD")
 				}
 
 				// Sorcery Shoutout
 				if strings.HasPrefix(contents, "!sorcery") {
-					if err := bot.SendMessage("!so @SorceryAndSarcasm"); err != nil {
-						log.Printf("ERROR: send failed: %s", err)
-					}
+					bot.SendMessage("!so @SorceryAndSarcasm")
 				}
 			}
 		}),

@@ -1,18 +1,14 @@
 package bot
 
-import (
-	"medgebot/irc"
-)
-
 type Handler struct {
-	consumer func(irc.Message)
-	msgChan  chan irc.Message
+	consumer func(Event)
+	msgChan  chan Event
 }
 
-func NewHandler(consumer func(irc.Message)) Handler {
+func NewHandler(consumer func(Event)) Handler {
 	return Handler{
 		consumer: consumer,
-		msgChan:  make(chan irc.Message, 10),
+		msgChan:  make(chan Event, 10),
 	}
 }
 
@@ -22,6 +18,6 @@ func (h Handler) Listen() {
 	}
 }
 
-func (h Handler) Receive(msg irc.Message) {
+func (h Handler) Receive(msg Event) {
 	h.msgChan <- msg
 }

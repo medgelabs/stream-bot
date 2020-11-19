@@ -3,15 +3,14 @@ package bot
 import (
 	"log"
 	"medgebot/greeter"
-	"medgebot/irc"
 	"strings"
 	"time"
 )
 
 func (bot *Bot) RegisterGreeter(greeter greeter.Greeter) {
 	bot.RegisterHandler(
-		NewHandler(func(msg irc.Message) {
-			username := msg.User
+		NewHandler(func(msg Event) {
+			username := msg.Sender
 			if strings.TrimSpace(username) == "" {
 				return
 			}
