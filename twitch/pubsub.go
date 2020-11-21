@@ -39,9 +39,10 @@ func NewClient() *PubSubClient {
 }
 
 func (client *PubSubClient) Connect(scheme, server string) error {
-	u := url.URL{Scheme: scheme, Host: server, Path: "/"}
 	client.serverHost = server
 	client.serverScheme = scheme
+
+	u := url.URL{Scheme: scheme, Host: server, Path: "/"}
 	log.Println("connecting to " + u.String())
 
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
@@ -50,10 +51,20 @@ func (client *PubSubClient) Connect(scheme, server string) error {
 	}
 
 	client.conn = conn
+
+	// Kick off PING/PONG handler
+
+	// LISTEN to desired topics
+
 	return nil
 }
 
 func (client *PubSubClient) Close() {
+	if client.conn == nil {
+		log.Println("WARN: PubSub.Close() called on nil connection")
+		return
+	}
+
 	client.conn.Close()
 	log.Println("INFO: connection closed")
 }
@@ -110,12 +121,18 @@ func (client *PubSubClient) reconnect() {
 	client.Lock()
 	defer client.Unlock()
 
+	// Close the existing connection to ensure no resource leaks!
+	client.Close()
+
 	err := client.Connect(client.serverHost, client.serverScheme)
 	for retries := 1; err == nil || retries == MAX_RETRIES; retries++ {
 		log.Printf("ERROR: reconnect. Retry %d - %v", retries, err)
 		time.Sleep(time.Duration(retries) * time.Second)
 		err = client.Connect(client.serverHost, client.serverScheme)
 
-		// TODO if retries == MAX_RETRIES - 1, what do we do?
+		// If max retries reached
+		if retries == MAX_RETRIES-1 {
+			log.Println("ERROR: Max reconnect tries hit in PubSub.reconnect()")
+		}
 	}
 }
