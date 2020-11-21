@@ -8,7 +8,7 @@ import (
 func (bot *Bot) RegisterReadLogger() {
 	bot.RegisterHandler(
 		NewHandler(func(evt Event) {
-			log.Printf("> %s", evt)
+			log.Printf("> %s", evt.Message)
 		}),
 	)
 }
