@@ -37,18 +37,6 @@ type Message struct {
 	Params  []string
 }
 
-func (irc *Irc) GetId() string {
-	return "irc"
-}
-
-func (irc *Irc) GetInboundChannel() chan<- bot.Event {
-	return irc.inboundEvents
-}
-
-func (irc *Irc) SetOutboundChannel(outbound chan<- bot.Event) {
-	irc.outboundEvents = outbound
-}
-
 func (msg Message) String() string {
 	return fmt.Sprintf("%s %s %s", msg.User, msg.Command, strings.Join(msg.Params, " "))
 }
@@ -149,8 +137,7 @@ func (irc *Irc) sendPong(body []string) {
 }
 
 func (irc *Irc) Close() {
-	_ = irc.conn.Close()
-	log.Println("INFO: connection closed")
+	irc.conn.Close()
 }
 
 // Read reads from the IRC stream, one line at a time
@@ -224,7 +211,7 @@ func (irc *Irc) sendNick(nick string) error {
 // Write writes a message to the IRC stream
 func (irc *Irc) write(message Message) error {
 	if irc.conn == nil {
-		return fmt.Errorf("Irc.conn is nil. Did you forget to call Irc.Connect()?")
+		return errors.New("Irc.conn is nil. Did you forget to call Irc.Connect()?")
 	}
 
 	msgStr := fmt.Sprintf("%s %s", message.Command, strings.Join(message.Params, " "))
@@ -240,4 +227,13 @@ func (irc *Irc) write(message Message) error {
 		log.Printf("< %s", message)
 	}
 	return nil
+}
+
+// Pluggable
+func (irc *Irc) GetChannel() chan<- bot.Event {
+	return irc.inboundEvents
+}
+
+func (irc *Irc) SetChannel(outbound chan<- bot.Event) {
+	irc.outboundEvents = outbound
 }

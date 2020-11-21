@@ -1,15 +1,12 @@
 package bot
 
 import (
-	"errors"
-	"fmt"
 	"sync"
 )
 
 type Bot struct {
 	sync.Mutex
 	events          chan Event
-	channel         string
 	consumers       []Handler
 	inboundPlugins  InboundPluginCollection
 	outboundPlugins OutboundPluginCollection
@@ -18,7 +15,6 @@ type Bot struct {
 func New() Bot {
 	return Bot{
 		events:          make(chan Event, 0),
-		channel:         "",
 		consumers:       make([]Handler, 0),
 		inboundPlugins:  make(InboundPluginCollection, 0),
 		outboundPlugins: make(OutboundPluginCollection, 0),
@@ -27,19 +23,8 @@ func New() Bot {
 
 func (bot *Bot) sendEvent(evt Event) {
 	for _, plugin := range bot.outboundPlugins {
-		plugin.GetInboundChannel() <- evt
+		plugin.GetChannel() <- evt
 	}
-}
-
-func (bot *Bot) sendEventToPlugin(id string, evt Event) error {
-	plugin, ok := bot.outboundPlugins[id]
-	if !ok {
-		return errors.New("outbound plugin not registered")
-	}
-
-	plugin.GetInboundChannel() <- evt
-
-	return nil
 }
 
 // Start the bot and listen for incoming events
@@ -79,7 +64,7 @@ func (bot *Bot) listen() {
 		select {
 		case evt := <-bot.events:
 			bot.Mutex.Lock()
-			fmt.Printf("%+v", evt)
+			// fmt.Printf("%+v", evt)
 			for _, consumer := range bot.consumers {
 				consumer.Receive(evt)
 			}
