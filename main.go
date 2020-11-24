@@ -83,12 +83,10 @@ func main() {
 	client := irc.NewClient()
 	defer client.Close()
 
-	go func() {
-		err = client.Start(ircConfig)
-		if err != nil {
-			log.Fatalf(err.Error())
-		}
-	}()
+	err = client.Start(ircConfig)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
 
 	if err := chatBot.RegisterPlugin(client); err != nil {
 		log.Fatalf("FATAL: failed to register plugin: %s", err)

@@ -61,9 +61,21 @@ func (irc *Irc) Start(config Config) error {
 		return errors.Errorf("FATAL: bot join channel failed: %s", err)
 	}
 
-	for {
-		irc.read()
-	}
+	// Read loop for receiving messages from IRC
+	go func() {
+		for {
+			irc.read()
+		}
+	}()
+
+	// Read loop for receiving messages from the bot
+	go func() {
+		for recv := range irc.inboundEvents {
+			irc.PrivMsg(config.Channel, recv.Message)
+		}
+	}()
+
+	return nil
 }
 
 func (irc *Irc) Connect(scheme, server string) error {
@@ -175,8 +187,12 @@ func (irc *Irc) read() {
 	msg.Command = tokens[cursor]
 	msg.Params = tokens[cursor+1:]
 
+	// Finally, strip excess for Message
+	contents := strings.TrimPrefix(strings.Join(msg.Params[1:], " "), ":")
+
 	// Intercept for PING/PONG
 	if msg.Command == "PING" {
+		log.Printf("> PING %s", contents)
 		irc.sendPong(msg.Params)
 		return
 	}
@@ -184,7 +200,7 @@ func (irc *Irc) read() {
 	irc.outboundEvents <- bot.Event{
 		Type:    bot.CHAT_MSG,
 		Sender:  msg.User,
-		Message: msg.String(),
+		Message: contents,
 	}
 }
 
