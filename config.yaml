@@ -1,5 +1,6 @@
 greeter:
   medgelabs:
+    channelId: 62232210
     messageFormat: "Welcome to the lab, @%s!"
   sorceryandsarcasm:
     messageFormat: "@%s sorcer19Hype"
