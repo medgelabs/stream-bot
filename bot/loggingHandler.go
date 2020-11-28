@@ -4,11 +4,11 @@ import (
 	"log"
 )
 
-// Prints messages to the console
+// Prints Chat messages to the console
 func (bot *Bot) RegisterReadLogger() {
 	bot.RegisterHandler(
 		NewHandler(func(evt Event) {
-			log.Printf("> %s", evt.Message)
+			log.Printf("> %s: %s", evt.Sender, evt.Message)
 		}),
 	)
 }
