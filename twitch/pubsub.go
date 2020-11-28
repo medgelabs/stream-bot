@@ -101,11 +101,32 @@ func (client *PubSubClient) listen(topic string) error {
 	return client.write(evt)
 }
 
+// PING handler to keep the connection alive
+func (client *PubSubClient) sendPing() {
+	pingTick := time.NewTicker(4 * time.Minute)
+	for {
+		select {
+		case <-pingTick.C:
+			err := client.write(event{
+				Type: "PING",
+			})
+			if err != nil {
+				log.Printf("ERROR: pubsub PING failed - %v", err)
+				break
+			}
+		}
+
+	}
+}
+
 // Read reads from the PubSub stream, one event at a time
 func (client *PubSubClient) read() (event, error) {
 	_, message, err := client.conn.ReadMessage()
 	if err != nil {
-		return event{}, err
+		// TODO should check if conn is closed
+		if recErr := client.reconnect(); recErr != nil {
+			return event{}, err
+		}
 	}
 
 	var evt event
@@ -115,7 +136,6 @@ func (client *PubSubClient) read() (event, error) {
 	log.Printf("%+v", evt)
 
 	// TODO Now, we figure out what the message is
-
 	// TODO how to validate we received a PONG in time?
 
 	return event{}, nil
@@ -131,27 +151,13 @@ func (client *PubSubClient) write(message event) error {
 	client.Mutex.Lock()
 	defer client.Mutex.Unlock()
 	if err := client.conn.WriteJSON(message); err != nil {
-		return err
+		// TODO should check if conn is closed
+		if recErr := client.reconnect(); recErr != nil {
+			return err
+		}
 	}
 
 	return nil
-}
-
-// PING handler to keep the connection alive
-func (client *PubSubClient) sendPing() {
-	pingTick := time.NewTicker(4 * time.Minute)
-	for {
-		select {
-		case <-pingTick.C:
-			err := client.write(event{
-				Type: "PING",
-			})
-			if err != nil {
-				break
-			}
-
-		}
-	}
 }
 
 // Handle the need to reconnect the client

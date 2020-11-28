@@ -192,7 +192,7 @@ func (irc *Irc) read() {
 
 	// Intercept for PING/PONG
 	if msg.Command == "PING" {
-		log.Printf("> PING %s", contents)
+		// log.Printf("> PING %s", contents)
 		irc.sendPong(msg.Params)
 		return
 	}
@@ -239,7 +239,7 @@ func (irc *Irc) write(message Message) error {
 		return err
 	}
 
-	if message.Command != "PASS" {
+	if message.Command != "PASS" && message.Command != "PONG" {
 		log.Printf("< %s", message)
 	}
 	return nil
