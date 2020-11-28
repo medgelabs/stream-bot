@@ -6,15 +6,21 @@ import (
 	"log"
 	"medgebot/bot"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
 )
 
 const (
 	// Number of times to retry reconnects
 	MAX_RETRIES = 5
+
+	CHANNEL_POINT_TOPIC = "channel-points-channel-v1"
+	SUBS_TOPIC          = "channel-subscribe-events-v1"
+	BITS_TOPIC          = "channel-bits-events-v2"
 )
 
 type PubSubClient struct {
@@ -26,14 +32,17 @@ type PubSubClient struct {
 	authToken      string
 	serverHost     string
 	serverScheme   string
-	outboundevents chan<- bot.Event
+	outboundEvents chan<- bot.Event
 }
 
-// event from a listened topic on PubSub
+// event from a listened topic
 type event struct {
-	Type  string      `json:"type"`
-	Error string      `json:"error,omitempty"`
-	Data  interface{} `json:"data,omitempty"`
+	Type  string `json:"type"`
+	Error string `json:"error,omitempty"`
+	Data  struct {
+		Topic   string `json:"topic"`
+		Message string `json:"message"`
+	} `json:"data,omitempty"`
 }
 
 func NewPubSubClient(channelId, authToken string) *PubSubClient {
@@ -59,7 +68,7 @@ func (client *PubSubClient) Connect(scheme, server string) error {
 	client.conn = conn
 
 	// LISTEN to desired topics
-	topicStr := fmt.Sprintf("%s.%s", "channel-points-channel-v1", client.channelId)
+	topicStr := fmt.Sprintf("%s.%s", CHANNEL_POINT_TOPIC, client.channelId)
 	return client.listen(topicStr)
 }
 
@@ -68,12 +77,56 @@ func (client *PubSubClient) Start() {
 	go client.sendPing()
 
 	for {
-		_, err := client.read()
+		evt, err := client.read()
 		if err != nil {
 			log.Printf("ERROR: pubsub read - %v", err)
 			break
 		}
+
+		// Now, we figure out what the message is and, if valid, parse and
+		// send to the outbound consumers
+		if strings.HasPrefix(evt.Data.Topic, CHANNEL_POINT_TOPIC) {
+			botEvt, err := parseChannelPointRedeemV1(evt)
+			if err != nil {
+				log.Printf("ERROR: pubsub parse - %v", err)
+				continue
+			}
+			client.outboundEvents <- botEvt
+		}
 	}
+}
+
+// Attempt to parse a Point Redemption V1 event
+func parseChannelPointRedeemV1(message event) (bot.Event, error) {
+	var redeem struct {
+		Type string `json:"type"`
+		Data struct {
+			Redemption struct {
+				User struct {
+					Name string `json:"display_name"`
+				} `json:"user"`
+				Reward struct {
+					Title     string `json:"title"`
+					Cost      int    `json:"cost"`
+					UserInput string `json:"user_input"`
+				} `json:"reward"`
+			} `json:"redemption"`
+		} `json:"data"`
+	}
+
+	if err := json.Unmarshal([]byte(message.Data.Message), &redeem); err != nil {
+		log.Printf("PointRedemption parse json - %v", err)
+		return bot.Event{}, errors.Errorf("PointRedemption parse failed - %v", err)
+	}
+
+	evt := bot.NewPointsEvent()
+	data := redeem.Data.Redemption
+	evt.Amount = data.Reward.Cost
+	evt.Sender = data.User.Name
+	evt.Title = data.Reward.Title
+	evt.Message = data.Reward.UserInput
+
+	return evt, nil
 }
 
 func (client *PubSubClient) Close() {
@@ -87,18 +140,24 @@ func (client *PubSubClient) Close() {
 
 // Listen to the given topic
 func (client *PubSubClient) listen(topic string) error {
-	evt := event{
+	type listenEvent struct {
+		Type string `json:"type"`
+		Data struct {
+			Topics    []string `json:"topics"`
+			AuthToken string   `json:"auth_token"`
+		}
+	}
+
+	return client.write(listenEvent{
 		Type: "LISTEN",
 		Data: struct {
 			Topics    []string `json:"topics"`
 			AuthToken string   `json:"auth_token"`
 		}{
-			[]string{topic},
-			client.authToken,
+			Topics:    []string{topic},
+			AuthToken: client.authToken,
 		},
-	}
-
-	return client.write(evt)
+	})
 }
 
 // PING handler to keep the connection alive
@@ -115,7 +174,6 @@ func (client *PubSubClient) sendPing() {
 				break
 			}
 		}
-
 	}
 }
 
@@ -133,16 +191,12 @@ func (client *PubSubClient) read() (event, error) {
 	if err := json.Unmarshal([]byte(message), &evt); err != nil {
 		return event{}, err
 	}
-	log.Printf("%+v", evt)
 
-	// TODO Now, we figure out what the message is
-	// TODO how to validate we received a PONG in time?
-
-	return event{}, nil
+	return evt, nil
 }
 
 // Write writes a message to the PubSub stream
-func (client *PubSubClient) write(message event) error {
+func (client *PubSubClient) write(message interface{}) error {
 	if client.conn == nil {
 		return fmt.Errorf("PubSub.conn is nil. Did you forget to call PubSub.Connect()?")
 	}
@@ -188,5 +242,5 @@ func (client *PubSubClient) reconnect() error {
 }
 
 func (client *PubSubClient) SetChannel(outbound chan<- bot.Event) {
-	client.outboundevents = outbound
+	client.outboundEvents = outbound
 }

@@ -64,7 +64,6 @@ func (bot *Bot) listen() {
 		select {
 		case evt := <-bot.events:
 			bot.Mutex.Lock()
-			// fmt.Printf("%+v", evt)
 			for _, consumer := range bot.consumers {
 				consumer.Receive(evt)
 			}

@@ -14,13 +14,12 @@ const (
 // Subscriptions / Re-subscriptions / Gifted Subscriptions
 // Point redemptions
 type Event struct {
-	Type       int    // Identify what kind of Event we are receiving
-	Sender     string // Source user, empty if not tied to a user
-	Recipient  string // Target user, if applicable (i.e gifted subscription)
-	Title      string // title of the Channel Point redemption made
-	Message    string // User-supplied message, empty if not provided
-	Amount     int    // Any numerical amount tied to the message (bits, points, sub count)
-	AmountUnit string // ex: Months subscribed
+	Type      int    // Identify what kind of Event we are receiving
+	Sender    string // Source user, empty if not tied to a user
+	Recipient string // Target user, if applicable (i.e gifted subscription)
+	Title     string // title of the Channel Point redemption made
+	Message   string // User-supplied message, empty if not provided
+	Amount    int    // Any numerical amount tied to the message (bits, points, sub count)
 }
 
 func NewChatEvent() Event {
