@@ -9,6 +9,7 @@ import (
 	"medgebot/irc"
 	"medgebot/ledger"
 	"medgebot/secret"
+	"medgebot/twitch"
 	"strings"
 	"time"
 
@@ -72,24 +73,42 @@ func main() {
 		log.Fatalf("FATAL: Get Twitch Token from store - %v", err)
 	}
 
+	// IRC
 	ircConfig := irc.Config{
 		Scheme:   "wss",
 		Host:     "irc-ws.chat.twitch.tv:443",
 		Nick:     nick,
-		Password: password,
+		Password: fmt.Sprintf("oauth:%s", password),
 		Channel:  channel,
 	}
 
-	client := irc.NewClient()
-	defer client.Close()
+	irc := irc.NewClient()
+	defer irc.Close()
 
-	err = client.Start(ircConfig)
+	err = irc.Start(ircConfig)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
 
-	if err := chatBot.RegisterPlugin(client); err != nil {
-		log.Fatalf("FATAL: failed to register plugin: %s", err)
+	if err := chatBot.RegisterPlugin(irc); err != nil {
+		log.Fatalf("FATAL: failed to register plugin: %v", err)
+	}
+
+	// PubSub
+	channelIdKey := fmt.Sprintf("%s.channelId", strings.Trim(channel, "#"))
+	channelId := viper.GetString(channelIdKey)
+	pubSub := twitch.NewPubSubClient(channelId, password)
+	defer pubSub.Close()
+
+	err = pubSub.Connect("wss", "pubsub-edge.twitch.tv")
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	go pubSub.Start()
+
+	if err := chatBot.RegisterInboundPlugin(pubSub); err != nil {
+		log.Fatalf("FATAL: failed to register PubSub: %v", err)
 	}
 	/// Plugin Registration END ///
 

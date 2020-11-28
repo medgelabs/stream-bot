@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"medgebot/bot"
 	"net/url"
 	"sync"
 	"time"
@@ -21,20 +22,25 @@ type PubSubClient struct {
 	conn *websocket.Conn
 
 	// To account for reconnects, we need to store connection details
-	serverHost   string
-	serverScheme string
+	channelId      string
+	authToken      string
+	serverHost     string
+	serverScheme   string
+	outboundevents chan<- bot.Event
 }
 
-// Event from a listened topic on PubSub
-type Event struct {
-	Type  string `json:"type"`
-	Error string `json:"error,omitempty"`
-	// Data  string `json:"data,omitempty"`
+// event from a listened topic on PubSub
+type event struct {
+	Type  string      `json:"type"`
+	Error string      `json:"error,omitempty"`
+	Data  interface{} `json:"data,omitempty"`
 }
 
-func NewClient() *PubSubClient {
+func NewPubSubClient(channelId, authToken string) *PubSubClient {
 	return &PubSubClient{
-		conn: nil,
+		conn:      nil,
+		channelId: channelId,
+		authToken: authToken,
 	}
 }
 
@@ -52,11 +58,22 @@ func (client *PubSubClient) Connect(scheme, server string) error {
 
 	client.conn = conn
 
-	// Kick off PING/PONG handler
-
 	// LISTEN to desired topics
+	topicStr := fmt.Sprintf("%s.%s", "channel-points-channel-v1", client.channelId)
+	return client.listen(topicStr)
+}
 
-	return nil
+// Start the listener as an infinite loop
+func (client *PubSubClient) Start() {
+	go client.sendPing()
+
+	for {
+		_, err := client.read()
+		if err != nil {
+			log.Printf("ERROR: pubsub read - %v", err)
+			break
+		}
+	}
 }
 
 func (client *PubSubClient) Close() {
@@ -66,28 +83,46 @@ func (client *PubSubClient) Close() {
 	}
 
 	client.conn.Close()
-	log.Println("INFO: connection closed")
+}
+
+// Listen to the given topic
+func (client *PubSubClient) listen(topic string) error {
+	evt := event{
+		Type: "LISTEN",
+		Data: struct {
+			Topics    []string `json:"topics"`
+			AuthToken string   `json:"auth_token"`
+		}{
+			[]string{topic},
+			client.authToken,
+		},
+	}
+
+	return client.write(evt)
 }
 
 // Read reads from the PubSub stream, one event at a time
-func (client *PubSubClient) Read() (Event, error) {
+func (client *PubSubClient) read() (event, error) {
 	_, message, err := client.conn.ReadMessage()
 	if err != nil {
-		return Event{}, err
+		return event{}, err
 	}
 
-	var event Event
-	if err := json.Unmarshal([]byte(message), &event); err != nil {
-		return Event{}, err
+	var evt event
+	if err := json.Unmarshal([]byte(message), &evt); err != nil {
+		return event{}, err
 	}
+	log.Printf("%+v", evt)
 
 	// TODO Now, we figure out what the message is
 
-	return Event{}, nil
+	// TODO how to validate we received a PONG in time?
+
+	return event{}, nil
 }
 
 // Write writes a message to the PubSub stream
-func (client *PubSubClient) write(message Event) error {
+func (client *PubSubClient) write(message event) error {
 	if client.conn == nil {
 		return fmt.Errorf("PubSub.conn is nil. Did you forget to call PubSub.Connect()?")
 	}
@@ -103,19 +138,25 @@ func (client *PubSubClient) write(message Event) error {
 }
 
 // PING handler to keep the connection alive
-func (client *PubSubClient) SendPing() error {
-	err := client.write(Event{
-		Type: "PING",
-	})
+func (client *PubSubClient) sendPing() {
+	pingTick := time.NewTicker(4 * time.Minute)
+	for {
+		select {
+		case <-pingTick.C:
+			err := client.write(event{
+				Type: "PING",
+			})
+			if err != nil {
+				break
+			}
 
-	// Wait for pong?
-
-	return err
+		}
+	}
 }
 
 // Handle the need to reconnect the client
 // Maybe it was an error, maybe it was a RECONNECT event
-func (client *PubSubClient) reconnect() {
+func (client *PubSubClient) reconnect() error {
 	log.Println("Reconnecting PubSub client..")
 
 	client.Lock()
@@ -133,6 +174,13 @@ func (client *PubSubClient) reconnect() {
 		// If max retries reached
 		if retries == MAX_RETRIES-1 {
 			log.Println("ERROR: Max reconnect tries hit in PubSub.reconnect()")
+			return err
 		}
 	}
+
+	return nil
+}
+
+func (client *PubSubClient) SetChannel(outbound chan<- bot.Event) {
+	client.outboundevents = outbound
 }

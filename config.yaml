@@ -6,3 +6,16 @@ greeter:
     messageFormat: "@%s sorcer19Hype"
   spookyghostmachine:
     messageFormat: "@%s spooky127Hype"
+
+medgelabs:
+  channelId: 62232210
+  greeter:
+    messageFormat: "Welcome to the lab, @%s!"
+  channelPoints:
+    messageFormat: "Thanks for the research @%s!"
+sorceryandsarcasm:
+  greeter:
+    messageFormat: "@%s sorcer19Hype"
+spookyghostmachine:
+  greeter:
+    messageFormat: "@%s spooky127Hype"
