@@ -50,15 +50,20 @@ func NewClient() *Irc {
 
 func (irc *Irc) Start(config Config) error {
 	if err := irc.Connect(config.Scheme, config.Host); err != nil {
-		return errors.Errorf("ERROR: bot connect - %s", err)
+		return errors.Errorf("ERROR: irc connect - %s", err)
 	}
 
 	if err := irc.Authenticate(config.Nick, config.Password); err != nil {
-		return errors.Errorf("FATAL: bot authentication failure - %s", err)
+		return errors.Errorf("FATAL: irc authentication failure - %s", err)
 	}
 
 	if err := irc.Join(config.Channel); err != nil {
-		return errors.Errorf("FATAL: bot join channel failed: %s", err)
+		return errors.Errorf("FATAL: irc join channel failed: %s", err)
+	}
+
+	// Command Capability Request for UserNotices (raids, subs, etc)
+	if err := irc.CapReq("commands"); err != nil {
+		return errors.Errorf("FATAL: irc CapReq COMMANDS failed: %s", err)
 	}
 
 	// Read loop for receiving messages from IRC
@@ -117,10 +122,11 @@ func (irc *Irc) Join(channel string) error {
 	return irc.write(joinCmd)
 }
 
+// Capability Request for IRC. DO NOT include the twitch.tv/ prefix
 func (irc *Irc) CapReq(capability string) error {
 	msg := Message{
 		Command: "CAP REQ",
-		Params:  []string{":" + capability},
+		Params:  []string{":twitch.tv/" + capability},
 	}
 
 	return irc.write(msg)
@@ -197,10 +203,15 @@ func (irc *Irc) read() {
 		return
 	}
 
-	irc.outboundEvents <- bot.Event{
-		Type:    bot.CHAT_MSG,
-		Sender:  msg.User,
-		Message: contents,
+	// TODO remove this when tested
+	if msg.Command == "PRIVMSG" {
+		irc.outboundEvents <- bot.Event{
+			Type:    bot.CHAT_MSG,
+			Sender:  msg.User,
+			Message: contents,
+		}
+	} else {
+		log.Println("<<< " + msg.String())
 	}
 }
 
