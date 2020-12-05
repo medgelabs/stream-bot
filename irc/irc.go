@@ -2,21 +2,19 @@ package irc
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"medgebot/bot"
-	"net/url"
 	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
-
-	"github.com/gorilla/websocket"
 )
 
 // Irc client
 type Irc struct {
 	sync.Mutex
-	conn           *websocket.Conn
+	conn           io.ReadWriteCloser
 	inboundEvents  chan bot.Event
 	outboundEvents chan<- bot.Event
 }
@@ -37,22 +35,14 @@ type Message struct {
 	Params  []string
 }
 
-func (msg Message) String() string {
-	return fmt.Sprintf("%s %s %s", msg.User, msg.Command, strings.Join(msg.Params, " "))
-}
-
-func NewClient() *Irc {
+func NewClient(conn io.ReadWriteCloser) *Irc {
 	return &Irc{
-		conn:          nil,
+		conn:          conn,
 		inboundEvents: make(chan bot.Event),
 	}
 }
 
 func (irc *Irc) Start(config Config) error {
-	if err := irc.Connect(config.Scheme, config.Host); err != nil {
-		return errors.Errorf("ERROR: irc connect - %s", err)
-	}
-
 	if err := irc.Authenticate(config.Nick, config.Password); err != nil {
 		return errors.Errorf("FATAL: irc authentication failure - %s", err)
 	}
@@ -64,6 +54,10 @@ func (irc *Irc) Start(config Config) error {
 	// Command Capability Request for UserNotices (raids, subs, etc)
 	if err := irc.CapReq("commands"); err != nil {
 		return errors.Errorf("FATAL: irc CapReq COMMANDS failed: %s", err)
+	}
+
+	if err := irc.CapReq("tags"); err != nil {
+		return errors.Errorf("FATAL: irc CapReq TAGS failed: %s", err)
 	}
 
 	// Read loop for receiving messages from IRC
@@ -80,19 +74,6 @@ func (irc *Irc) Start(config Config) error {
 		}
 	}()
 
-	return nil
-}
-
-func (irc *Irc) Connect(scheme, server string) error {
-	u := url.URL{Scheme: scheme, Host: server, Path: "/"}
-	log.Println("connecting to " + u.String())
-
-	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
-	if err != nil {
-		return err
-	}
-
-	irc.conn = conn
 	return nil
 }
 
@@ -142,6 +123,10 @@ func (irc *Irc) PrivMsg(channel, message string) error {
 	return irc.write(msg)
 }
 
+func (msg Message) String() string {
+	return fmt.Sprintf("%s %s %s", msg.User, msg.Command, strings.Join(msg.Params, " "))
+}
+
 // SendPong reponds to the Ping heartbeat with the given body
 func (irc *Irc) sendPong(body []string) {
 	msg := Message{
@@ -154,18 +139,48 @@ func (irc *Irc) sendPong(body []string) {
 	}
 }
 
-func (irc *Irc) Close() {
-	irc.conn.Close()
+func (irc *Irc) Close() error {
+	return irc.conn.Close()
+}
+
+// SendPass sends the PASS command to the IRC
+func (irc *Irc) sendPass(token string) error {
+	passCmd := Message{
+		Command: "PASS",
+		Params:  []string{token},
+	}
+
+	return irc.write(passCmd)
+}
+
+// SendNick sends the NICK command to the IRC
+func (irc *Irc) sendNick(nick string) error {
+	nickCmd := Message{
+		Command: "NICK",
+		Params:  []string{nick},
+	}
+
+	return irc.write(nickCmd)
 }
 
 // Read reads from the IRC stream, one line at a time
 func (irc *Irc) read() {
-	_, message, err := irc.conn.ReadMessage()
+	var buff []byte
+	len, err := irc.conn.Read(buff)
 	if err != nil {
-		// TODO check if conn is open. If not - reconnect?
 		log.Printf("ERROR: read irc - %v", err)
 		return
 	}
+
+	log.Printf("Read %d bytes", len)
+
+	if len == 0 {
+		log.Println("Empty buffer")
+		return
+	}
+
+	message := string(buff)
+	log.Println(message)
 
 	// TrimSpace to get rid of /r/n
 	msgStr := strings.TrimSpace(string(message))
@@ -215,38 +230,12 @@ func (irc *Irc) read() {
 	}
 }
 
-// SendPass sends the PASS command to the IRC
-func (irc *Irc) sendPass(token string) error {
-	passCmd := Message{
-		Command: "PASS",
-		Params:  []string{token},
-	}
-
-	return irc.write(passCmd)
-}
-
-// SendNick sends the NICK command to the IRC
-func (irc *Irc) sendNick(nick string) error {
-	nickCmd := Message{
-		Command: "NICK",
-		Params:  []string{nick},
-	}
-
-	return irc.write(nickCmd)
-}
-
 // Write writes a message to the IRC stream
 func (irc *Irc) write(message Message) error {
-	if irc.conn == nil {
-		return errors.New("Irc.conn is nil. Did you forget to call Irc.Connect()?")
-	}
-
 	msgStr := fmt.Sprintf("%s %s", message.Command, strings.Join(message.Params, " "))
 
 	// Lock since WriteMessage requires only one concurrent execution
-	irc.Mutex.Lock()
-	defer irc.Mutex.Unlock()
-	if err := irc.conn.WriteMessage(websocket.TextMessage, []byte(msgStr)); err != nil {
+	if _, err := irc.conn.Write([]byte(msgStr)); err != nil {
 		return err
 	}
 

@@ -10,6 +10,7 @@ import (
 	"medgebot/ledger"
 	"medgebot/secret"
 	"medgebot/twitch"
+	"medgebot/ws"
 	"strings"
 	"time"
 
@@ -82,7 +83,9 @@ func main() {
 		Channel:  channel,
 	}
 
-	irc := irc.NewClient()
+	ircWs := ws.NewWebsocket()
+	ircWs.Connect("wss", "irc-ws.chat.twitch.tv:443")
+	irc := irc.NewClient(ircWs)
 	defer irc.Close()
 
 	err = irc.Start(ircConfig)
