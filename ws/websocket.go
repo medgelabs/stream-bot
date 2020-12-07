@@ -37,8 +37,7 @@ func (ws *Connection) Read(dest []byte) (int, error) {
 		return 0, err
 	}
 
-	dest = append(dest, message...)
-	return len(dest), nil
+	return copy(dest, message), nil
 }
 
 func (ws *Connection) Write(data []byte) (int, error) {

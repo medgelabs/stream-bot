@@ -11,6 +11,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	MAX_MSG_SIZE = 512 // bytes
+)
+
 // Irc client
 type Irc struct {
 	sync.Mutex
@@ -56,6 +60,7 @@ func (irc *Irc) Start(config Config) error {
 		return errors.Errorf("FATAL: irc CapReq COMMANDS failed: %s", err)
 	}
 
+	// Tags for bits/subs/raids metadata
 	if err := irc.CapReq("tags"); err != nil {
 		return errors.Errorf("FATAL: irc CapReq TAGS failed: %s", err)
 	}
@@ -165,22 +170,19 @@ func (irc *Irc) sendNick(nick string) error {
 
 // Read reads from the IRC stream, one line at a time
 func (irc *Irc) read() {
-	var buff []byte
+	buff := make([]byte, MAX_MSG_SIZE)
 	len, err := irc.conn.Read(buff)
 	if err != nil {
 		log.Printf("ERROR: read irc - %v", err)
 		return
 	}
 
-	log.Printf("Read %d bytes", len)
-
 	if len == 0 {
-		log.Println("Empty buffer")
+		log.Println("Empty message buffer")
 		return
 	}
 
 	message := string(buff)
-	log.Println(message)
 
 	// TrimSpace to get rid of /r/n
 	msgStr := strings.TrimSpace(string(message))
@@ -193,6 +195,7 @@ func (irc *Irc) read() {
 	// Tags
 	if strings.HasPrefix(tokens[cursor], "@") {
 		msg.Tags = strings.Split(strings.TrimLeft(tokens[cursor], "@"), ";")
+		log.Println(msg.Tags)
 		cursor++
 	}
 
