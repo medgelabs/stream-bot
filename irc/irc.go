@@ -12,8 +12,28 @@ import (
 )
 
 const (
-	MAX_MSG_SIZE = 512 // bytes
+	MAX_MSG_SIZE = 1024 // bytes
 )
+
+/*
+
+(Re)Sub:
+
+Tags: [badge-info=founder/4 badges=founder/0 color=#2E8B57 display-name=medgelabs emotes= flags= id=c1839900-5cf5-4660-8249-944ed3349173 login=medgelabs mod=0 msg-id=resub msg-param-cumulative-months=4 msg-param-months=0 msg-param-multimonth-duration=0 msg-param-multimonth-tenure=0 msg-param-should-share-streak=0 msg-param-sub-plan-name=Channel\sSubscription\s(pk_ninten) msg-param-sub-plan=1000 msg-param-was-gifted=false room-id=425558714 subscriber=1 system-msg=medgelabs\ssubscribed\sat\sTier\s1.\sThey've\ssubscribed\sfor\s4\smonths! tmi-sent-ts=1607433305720 user-id=62232210 user-type=]
+Mesage: tmi.twitch.tv USERNOTICE #nintenbrews :Oh snap it's a ninten
+
+
+Bits:
+
+Tags: [badge-info=founder/4 badges=founder/0 bits=100 color=#2E8B57 display-name=medgelabs emotes= flags= id=8e275b11-22d8-4cc9-a75f-c773b5b43a3f mod=0 room-id=425558714 subscriber=0 tmi-sent-ts=1607433450079 turbo=0 user-id=62232210 user-type=]
+Message: medgelabs: cheer100 HAPPY BIRTHDAY MRS. NINTEN
+
+Raid:
+
+Tags: [badge-info=founder/4 badges=founder/0 color=#2E8B57 display-name=medgelabs emotes= flags= id=bf27e226-96e3-4494-992d-d33cc0b2d39f login=medgelabs mod=0 msg-id=raid msg-param-displayName=medgelabs msg-param-login=medgelabs msg-param-profileImageURL=https://static-cdn.jtvnw.net/jtv_user_pictures/67a0147d-adec-4121-b5a3-a195f20e0fd0-profile_image-70x70.png msg-param-viewerCount=1 room-id=425558714 subscriber=1 system-msg=1\sraiders\sfrom\smedgelabs\shave\sjoined! tmi-sent-ts=1607438402227 user-id=62232210 user-type=]
+Message: tmi.twitch.tv USERNOTICE #nintenbrews
+
+*/
 
 // Irc client
 type Irc struct {
