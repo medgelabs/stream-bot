@@ -37,28 +37,6 @@ type Config struct {
 	Channel  string
 }
 
-// Message represents a line of text from the IRC stream
-type Message struct {
-	Tags    map[string]string
-	User    string
-	Command string
-	Params  string // aka message content
-}
-
-// Tag returns a tag on the message, or an empty string and a bool indicating if the
-// tag was found
-func (msg Message) Tag(tag string) string {
-	return msg.Tags[tag]
-}
-
-func (msg *Message) AddTag(tag, value string) {
-	if msg.Tags == nil {
-		msg.Tags = make(map[string]string)
-	}
-
-	msg.Tags[tag] = value
-}
-
 func NewClient(conn io.ReadWriteCloser) *Irc {
 	return &Irc{
 		conn:          conn,
@@ -214,12 +192,15 @@ func (irc *Irc) read() {
 	// Now, convert to bot.Event
 	switch msg.Command {
 
-	// PRIVMSG is almost always a chat message
+	// PRIVMSG is almost always, either, a chat message or bits cheer
 	case "PRIVMSG":
-		irc.outboundEvents <- bot.Event{
-			Type:    bot.CHAT_MSG,
-			Sender:  msg.User,
-			Message: msg.Params,
+		if isBitsMessage(msg) {
+			irc.sendEvent(parseBitsMessage(msg))
+		} else {
+			evt := bot.NewChatEvent()
+			evt.Sender = msg.User
+			evt.Message = msg.Params
+			irc.sendEvent(evt)
 		}
 
 	// USERNOTICE forms most event type messages to be parsed
@@ -228,9 +209,7 @@ func (irc *Irc) read() {
 
 		switch msgType {
 		case MSG_RAID:
-			irc.outboundEvents <- parseRaidMessage(msg)
-		case MSG_BITS:
-			irc.outboundEvents <- parseBitsMessage(msg)
+			irc.sendEvent(parseRaidMessage(msg))
 		default:
 			log.Printf("Unknown USERNOTICE: %s", msg.String())
 		}
@@ -238,6 +217,11 @@ func (irc *Irc) read() {
 	default:
 		log.Printf("<<< %s", msg.String())
 	}
+}
+
+// Send Event to the bot
+func (irc *Irc) sendEvent(evt bot.Event) {
+	irc.outboundEvents <- evt
 }
 
 // Attempt to parse a line from IRC to a Message
@@ -281,14 +265,8 @@ func parseIrcLine(message string) Message {
 // Parse a msgType from Tags to one of our iota constants, or MSG_SYSTEM if
 // unknown
 func parseMessageType(msg Message) int {
-
-	// Bits doesn't use msg-id, so we must check for that explicitly
-	_, err := strconv.Atoi(msg.Tag("bits"))
-	if err == nil {
-		return MSG_BITS
-	}
-
 	msgType := msg.Tag("msg-id")
+
 	switch msgType {
 	case "raid":
 		return MSG_RAID
@@ -310,6 +288,12 @@ func parseRaidMessage(msg Message) bot.Event {
 	evt.Sender = raider
 	evt.Amount = raidSize
 	return evt
+}
+
+// Check if message is a Bits message
+func isBitsMessage(msg Message) bool {
+	_, err := strconv.Atoi(msg.Tag("bits"))
+	return err == nil
 }
 
 func parseBitsMessage(msg Message) bot.Event {
