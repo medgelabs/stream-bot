@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"medgebot/bot"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -14,13 +13,6 @@ import (
 
 const (
 	MAX_MSG_SIZE = 1024 // bytes
-
-	MSG_RAID = iota
-	MSG_SUB
-	MSG_GIFTSUB
-	MSG_BITS
-	MSG_CHAT
-	MSG_SYSTEM // mostly for messages like PING/PONG
 )
 
 // Irc client
@@ -130,6 +122,10 @@ func (msg Message) String() string {
 	return fmt.Sprintf("%s %s %s", msg.User, msg.Command, msg.Params)
 }
 
+func (irc *Irc) Close() error {
+	return irc.conn.Close()
+}
+
 // SendPong reponds to the Ping heartbeat with the given body
 func (irc *Irc) sendPong(body string) {
 	msg := Message{
@@ -140,10 +136,6 @@ func (irc *Irc) sendPong(body string) {
 	if err := irc.write(msg); err != nil {
 		log.Printf("ERROR: irc.send PONG - %v", err)
 	}
-}
-
-func (irc *Irc) Close() error {
-	return irc.conn.Close()
 }
 
 // SendPass sends the PASS command to the IRC
@@ -194,8 +186,11 @@ func (irc *Irc) read() {
 
 	// PRIVMSG is almost always, either, a chat message or bits cheer
 	case "PRIVMSG":
-		if isBitsMessage(msg) {
-			irc.sendEvent(parseBitsMessage(msg))
+		if msg.IsBitsMessage() {
+			evt := bot.NewBitsEvent()
+			evt.Sender = msg.BitsSender()
+			evt.Amount = msg.BitsAmount()
+			irc.sendEvent(evt)
 		} else {
 			evt := bot.NewChatEvent()
 			evt.Sender = msg.User
@@ -205,11 +200,12 @@ func (irc *Irc) read() {
 
 	// USERNOTICE forms most event type messages to be parsed
 	case "USERNOTICE":
-		msgType := parseMessageType(msg)
-
-		switch msgType {
-		case MSG_RAID:
-			irc.sendEvent(parseRaidMessage(msg))
+		switch {
+		case msg.IsRaidMessage():
+			evt := bot.NewRaidEvent()
+			evt.Sender = msg.Raider()
+			evt.Amount = msg.RaidSize()
+			irc.sendEvent(evt)
 		default:
 			log.Printf("Unknown USERNOTICE: %s", msg.String())
 		}
@@ -219,11 +215,7 @@ func (irc *Irc) read() {
 	}
 }
 
-// Send Event to the bot
-func (irc *Irc) sendEvent(evt bot.Event) {
-	irc.outboundEvents <- evt
-}
-
+// TODO should this be in message.go?
 // Attempt to parse a line from IRC to a Message
 func parseIrcLine(message string) Message {
 	// TrimSpace to get rid of /r/n
@@ -231,7 +223,7 @@ func parseIrcLine(message string) Message {
 	tokens := strings.Split(msgStr, " ")
 
 	// If tags are present, parse them out
-	msg := Message{}
+	msg := NewMessage()
 	cursor := 0
 
 	// Tags
@@ -262,54 +254,6 @@ func parseIrcLine(message string) Message {
 	return msg
 }
 
-// Parse a msgType from Tags to one of our iota constants, or MSG_SYSTEM if
-// unknown
-func parseMessageType(msg Message) int {
-	msgType := msg.Tag("msg-id")
-
-	switch msgType {
-	case "raid":
-		return MSG_RAID
-	default:
-		return MSG_SYSTEM
-	}
-}
-
-func parseRaidMessage(msg Message) bot.Event {
-	raider := msg.Tag("msg-param-displayName")
-	raidSizeStr := msg.Tag("msg-param-viewerCount")
-	raidSize, err := strconv.Atoi(raidSizeStr)
-	if err != nil {
-		log.Printf("ERROR: invalid raid size [%s], defaulting to 0", raidSizeStr)
-		raidSize = 0
-	}
-
-	evt := bot.NewRaidEvent()
-	evt.Sender = raider
-	evt.Amount = raidSize
-	return evt
-}
-
-// Check if message is a Bits message
-func isBitsMessage(msg Message) bool {
-	_, err := strconv.Atoi(msg.Tag("bits"))
-	return err == nil
-}
-
-func parseBitsMessage(msg Message) bot.Event {
-	cheerer := msg.Tag("display-name")
-	bitsStr := msg.Tag("bits")
-	amount, err := strconv.Atoi(bitsStr)
-	if err != nil {
-		log.Printf("ERROR: invalid bits [%s], defaulting to 0", bitsStr)
-	}
-
-	evt := bot.NewBitsEvent()
-	evt.Sender = cheerer
-	evt.Amount = amount
-	return evt
-}
-
 // Write writes a message to the IRC stream
 func (irc *Irc) write(message Message) error {
 	msgStr := fmt.Sprintf("%s %s", message.Command, message.Params)
@@ -332,4 +276,9 @@ func (irc *Irc) GetChannel() chan<- bot.Event {
 
 func (irc *Irc) SetChannel(outbound chan<- bot.Event) {
 	irc.outboundEvents = outbound
+}
+
+// Send Event to the bot
+func (irc *Irc) sendEvent(evt bot.Event) {
+	irc.outboundEvents <- evt
 }
