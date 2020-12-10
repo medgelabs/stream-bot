@@ -111,8 +111,8 @@ func (irc *Irc) Authenticate(nick, password string) error {
 // Join the given IRC channel. Must be called AFTER PASS and NICK
 func (irc *Irc) Join(channel string) error {
 	joinCmd := Message{
-		Command: "JOIN",
-		Params:  channel,
+		Command:  "JOIN",
+		Contents: channel,
 	}
 
 	return irc.write(joinCmd)
@@ -121,8 +121,8 @@ func (irc *Irc) Join(channel string) error {
 // Capability Request for IRC. DO NOT include the twitch.tv/ prefix
 func (irc *Irc) CapReq(capability string) error {
 	msg := Message{
-		Command: "CAP REQ",
-		Params:  ":twitch.tv/" + capability,
+		Command:  "CAP REQ",
+		Contents: ":twitch.tv/" + capability,
 	}
 
 	return irc.write(msg)
@@ -131,15 +131,15 @@ func (irc *Irc) CapReq(capability string) error {
 // PrivMsg sends a "private message" to the IRC, no prefix attached
 func (irc *Irc) PrivMsg(channel, message string) error {
 	msg := Message{
-		Command: "PRIVMSG",
-		Params:  channel + " :" + message,
+		Command:  "PRIVMSG",
+		Contents: channel + " :" + message,
 	}
 
 	return irc.write(msg)
 }
 
 func (msg Message) String() string {
-	return fmt.Sprintf("%s %s %s", msg.User, msg.Command, msg.Params)
+	return fmt.Sprintf("%s %s %s", msg.User, msg.Command, msg.Contents)
 }
 
 func (irc *Irc) Close() error {
@@ -149,8 +149,8 @@ func (irc *Irc) Close() error {
 // SendPong reponds to the Ping heartbeat with the given body
 func (irc *Irc) sendPong(body string) {
 	msg := Message{
-		Command: "PONG",
-		Params:  body,
+		Command:  "PONG",
+		Contents: body,
 	}
 
 	if err := irc.write(msg); err != nil {
@@ -161,8 +161,8 @@ func (irc *Irc) sendPong(body string) {
 // SendPass sends the PASS command to the IRC
 func (irc *Irc) sendPass(token string) error {
 	passCmd := Message{
-		Command: "PASS",
-		Params:  token,
+		Command:  "PASS",
+		Contents: token,
 	}
 
 	return irc.write(passCmd)
@@ -171,8 +171,8 @@ func (irc *Irc) sendPass(token string) error {
 // SendNick sends the NICK command to the IRC
 func (irc *Irc) sendNick(nick string) error {
 	nickCmd := Message{
-		Command: "NICK",
-		Params:  nick,
+		Command:  "NICK",
+		Contents: nick,
 	}
 
 	return irc.write(nickCmd)
@@ -192,12 +192,14 @@ func (irc *Irc) read() {
 		return
 	}
 
+	// log.Println("RAW >>> " + string(buff))
+
 	msg := parseIrcLine(string(buff))
 
 	// Intercept for PING/PONG
 	if msg.Command == "PING" {
 		// log.Printf("> PING %s", contents)
-		irc.sendPong(msg.Params)
+		irc.sendPong(msg.Contents)
 		return
 	}
 
@@ -214,7 +216,7 @@ func (irc *Irc) read() {
 		} else {
 			evt := bot.NewChatEvent()
 			evt.Sender = msg.User
-			evt.Message = msg.Params
+			evt.Message = msg.Contents
 			irc.sendEvent(evt)
 		}
 
@@ -266,17 +268,23 @@ func parseIrcLine(message string) Message {
 		cursor++
 	}
 
-	// Remaining cursor points should be Command and Params
+	// Next cursor point should be Command
 	msg.Command = tokens[cursor]
+	cursor++
 
-	// The combined String beyond the ":"
-	msg.Params = strings.TrimPrefix(strings.Join(tokens[cursor+1:], " "), ":")
+	// Then, Channel
+	msg.Channel = strings.TrimPrefix(tokens[cursor], "#")
+	cursor++
+
+	// The rest should be the combined String beyond the ":"
+	combinedContents := strings.Join(tokens[cursor:], " ")
+	msg.Contents = strings.TrimPrefix(combinedContents, ":")
 	return msg
 }
 
 // Write writes a message to the IRC stream
 func (irc *Irc) write(message Message) error {
-	msgStr := fmt.Sprintf("%s %s", message.Command, message.Params)
+	msgStr := fmt.Sprintf("%s %s", message.Command, message.Contents)
 
 	// Lock since WriteMessage requires only one concurrent execution
 	if _, err := irc.conn.Write([]byte(msgStr)); err != nil {

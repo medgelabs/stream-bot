@@ -16,10 +16,11 @@ const (
 
 // Message represents a line of text from the IRC stream
 type Message struct {
-	Tags    map[string]string
-	User    string
-	Command string
-	Params  string // aka message content
+	Tags     map[string]string
+	User     string
+	Command  string
+	Channel  string
+	Contents string
 }
 
 func NewMessage() Message {
