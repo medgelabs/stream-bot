@@ -123,6 +123,12 @@ Timeout:
 tmi.twitch.tv CLEARCHAT #CHANNEL :USERNAME
 ```
 
+First Sub:
+
+```
+map[badge-info: badges: color:#FFAFC8 display-name:SUBSCRIBER emotes: flags: id:433dc84a-6dae-4f45-ad1a-1d2a27c086f2 login:SUBSCRIBER mod:0 msg-id:sub msg-param-cumulative-months:1 msg-param-months:0 msg-param-multimonth-duration:1 msg-param-multimonth-tenure:0 msg-param-should-share-streak:0 msg-param-sub-plan:1000 msg-param-sub-plan-name:Tier1 msg-param-was-gifted:false room-id:ROOM_ID subscriber:1 system-msg:SUBSCRIBER\ssubscribed\sat\sTier\s1. tmi-sent-ts:1607629647151 user-id:267451666 user-type:] tmi.twitch.tv USERNOTICE
+```
+
 Gift Sub:
 
 ```
