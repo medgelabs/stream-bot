@@ -52,6 +52,10 @@ func (msg Message) Tag(tag string) string {
 }
 
 func (msg *Message) AddTag(tag, value string) {
+	if msg.Tags == nil {
+		msg.Tags = make(map[string]string)
+	}
+
 	msg.Tags[tag] = value
 }
 
@@ -279,7 +283,8 @@ func parseIrcLine(message string) Message {
 func parseMessageType(msg Message) int {
 
 	// Bits doesn't use msg-id, so we must check for that explicitly
-	if bits := msg.Tag("bits"); bits != "" {
+	_, err := strconv.Atoi(msg.Tag("bits"))
+	if err == nil {
 		return MSG_BITS
 	}
 
@@ -301,11 +306,10 @@ func parseRaidMessage(msg Message) bot.Event {
 		raidSize = 0
 	}
 
-	return bot.Event{
-		Type:   bot.RAID,
-		Sender: raider,
-		Amount: raidSize,
-	}
+	evt := bot.NewRaidEvent()
+	evt.Sender = raider
+	evt.Amount = raidSize
+	return evt
 }
 
 func parseBitsMessage(msg Message) bot.Event {
@@ -316,11 +320,10 @@ func parseBitsMessage(msg Message) bot.Event {
 		log.Printf("ERROR: invalid bits [%s], defaulting to 0", bitsStr)
 	}
 
-	return bot.Event{
-		Type:   bot.BITS,
-		Sender: cheerer,
-		Amount: amount,
-	}
+	evt := bot.NewBitsEvent()
+	evt.Sender = cheerer
+	evt.Amount = amount
+	return evt
 }
 
 // Write writes a message to the IRC stream
