@@ -6,15 +6,21 @@ medgelabs:
     messageFormat: "Thanks for the research @%s!"
   raid:
     messageFormat: "!so @%s"
+  bits:
+    messageFormat: "Thank you for the research @%s!"
 sorceryandsarcasm:
   channelId: 66490190
   greeter:
     messageFormat: "@%s sorcer19Hype"
   raid:
     messageFormat: "!so @%s"
+  bits:
+    messageFormat: "Thank you for the bits @%s!"
 spookyghostmachine:
   channelId: 119432399
   greeter:
     messageFormat: "@%s spooky127Hype"
   raid:
     messageFormat: "!so @%s"
+  bits:
+    messageFormat: "Thank you for the bittys @%s!"
