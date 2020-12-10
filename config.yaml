@@ -1,21 +1,20 @@
-greeter:
-  medgelabs:
-    channelId: 62232210
-    messageFormat: "Welcome to the lab, @%s!"
-  sorceryandsarcasm:
-    messageFormat: "@%s sorcer19Hype"
-  spookyghostmachine:
-    messageFormat: "@%s spooky127Hype"
-
 medgelabs:
   channelId: 62232210
   greeter:
     messageFormat: "Welcome to the lab, @%s!"
   channelPoints:
     messageFormat: "Thanks for the research @%s!"
+  raid:
+    messageFormat: "!so @%s"
 sorceryandsarcasm:
+  channelId: 66490190
   greeter:
     messageFormat: "@%s sorcer19Hype"
+  raid:
+    messageFormat: "!so @%s"
 spookyghostmachine:
+  channelId: 119432399
   greeter:
     messageFormat: "@%s spooky127Hype"
+  raid:
+    messageFormat: "!so @%s"

@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"medgebot/bot"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -13,27 +14,14 @@ import (
 
 const (
 	MAX_MSG_SIZE = 1024 // bytes
+
+	MSG_RAID = iota
+	MSG_SUB
+	MSG_GIFTSUB
+	MSG_BITS
+	MSG_CHAT
+	MSG_SYSTEM // mostly for messages like PING/PONG
 )
-
-/*
-
-(Re)Sub:
-
-Tags: [badge-info=founder/4 badges=founder/0 color=#2E8B57 display-name=medgelabs emotes= flags= id=c1839900-5cf5-4660-8249-944ed3349173 login=medgelabs mod=0 msg-id=resub msg-param-cumulative-months=4 msg-param-months=0 msg-param-multimonth-duration=0 msg-param-multimonth-tenure=0 msg-param-should-share-streak=0 msg-param-sub-plan-name=Channel\sSubscription\s(pk_ninten) msg-param-sub-plan=1000 msg-param-was-gifted=false room-id=425558714 subscriber=1 system-msg=medgelabs\ssubscribed\sat\sTier\s1.\sThey've\ssubscribed\sfor\s4\smonths! tmi-sent-ts=1607433305720 user-id=62232210 user-type=]
-Mesage: tmi.twitch.tv USERNOTICE #nintenbrews :Oh snap it's a ninten
-
-
-Bits:
-
-Tags: [badge-info=founder/4 badges=founder/0 bits=100 color=#2E8B57 display-name=medgelabs emotes= flags= id=8e275b11-22d8-4cc9-a75f-c773b5b43a3f mod=0 room-id=425558714 subscriber=0 tmi-sent-ts=1607433450079 turbo=0 user-id=62232210 user-type=]
-Message: medgelabs: cheer100 HAPPY BIRTHDAY MRS. NINTEN
-
-Raid:
-
-Tags: [badge-info=founder/4 badges=founder/0 color=#2E8B57 display-name=medgelabs emotes= flags= id=bf27e226-96e3-4494-992d-d33cc0b2d39f login=medgelabs mod=0 msg-id=raid msg-param-displayName=medgelabs msg-param-login=medgelabs msg-param-profileImageURL=https://static-cdn.jtvnw.net/jtv_user_pictures/67a0147d-adec-4121-b5a3-a195f20e0fd0-profile_image-70x70.png msg-param-viewerCount=1 room-id=425558714 subscriber=1 system-msg=1\sraiders\sfrom\smedgelabs\shave\sjoined! tmi-sent-ts=1607438402227 user-id=62232210 user-type=]
-Message: tmi.twitch.tv USERNOTICE #nintenbrews
-
-*/
 
 // Irc client
 type Irc struct {
@@ -44,8 +32,6 @@ type Irc struct {
 }
 
 type Config struct {
-	Scheme   string
-	Host     string
 	Nick     string
 	Password string
 	Channel  string
@@ -53,10 +39,20 @@ type Config struct {
 
 // Message represents a line of text from the IRC stream
 type Message struct {
-	Tags    []string
+	Tags    map[string]string
 	User    string
 	Command string
-	Params  []string
+	Params  string // aka message content
+}
+
+// Tag returns a tag on the message, or an empty string and a bool indicating if the
+// tag was found
+func (msg Message) Tag(tag string) string {
+	return msg.Tags[tag]
+}
+
+func (msg *Message) AddTag(tag, value string) {
+	msg.Tags[tag] = value
 }
 
 func NewClient(conn io.ReadWriteCloser) *Irc {
@@ -122,7 +118,7 @@ func (irc *Irc) Authenticate(nick, password string) error {
 func (irc *Irc) Join(channel string) error {
 	joinCmd := Message{
 		Command: "JOIN",
-		Params:  []string{channel},
+		Params:  channel,
 	}
 
 	return irc.write(joinCmd)
@@ -132,7 +128,7 @@ func (irc *Irc) Join(channel string) error {
 func (irc *Irc) CapReq(capability string) error {
 	msg := Message{
 		Command: "CAP REQ",
-		Params:  []string{":twitch.tv/" + capability},
+		Params:  ":twitch.tv/" + capability,
 	}
 
 	return irc.write(msg)
@@ -142,18 +138,18 @@ func (irc *Irc) CapReq(capability string) error {
 func (irc *Irc) PrivMsg(channel, message string) error {
 	msg := Message{
 		Command: "PRIVMSG",
-		Params:  []string{channel, ":" + message},
+		Params:  channel + " :" + message,
 	}
 
 	return irc.write(msg)
 }
 
 func (msg Message) String() string {
-	return fmt.Sprintf("%s %s %s", msg.User, msg.Command, strings.Join(msg.Params, " "))
+	return fmt.Sprintf("%s %s %s", msg.User, msg.Command, msg.Params)
 }
 
 // SendPong reponds to the Ping heartbeat with the given body
-func (irc *Irc) sendPong(body []string) {
+func (irc *Irc) sendPong(body string) {
 	msg := Message{
 		Command: "PONG",
 		Params:  body,
@@ -172,7 +168,7 @@ func (irc *Irc) Close() error {
 func (irc *Irc) sendPass(token string) error {
 	passCmd := Message{
 		Command: "PASS",
-		Params:  []string{token},
+		Params:  token,
 	}
 
 	return irc.write(passCmd)
@@ -182,7 +178,7 @@ func (irc *Irc) sendPass(token string) error {
 func (irc *Irc) sendNick(nick string) error {
 	nickCmd := Message{
 		Command: "NICK",
-		Params:  []string{nick},
+		Params:  nick,
 	}
 
 	return irc.write(nickCmd)
@@ -202,8 +198,46 @@ func (irc *Irc) read() {
 		return
 	}
 
-	message := string(buff)
+	msg := parseIrcLine(string(buff))
 
+	// Intercept for PING/PONG
+	if msg.Command == "PING" {
+		// log.Printf("> PING %s", contents)
+		irc.sendPong(msg.Params)
+		return
+	}
+
+	// Now, convert to bot.Event
+	switch msg.Command {
+
+	// PRIVMSG is almost always a chat message
+	case "PRIVMSG":
+		irc.outboundEvents <- bot.Event{
+			Type:    bot.CHAT_MSG,
+			Sender:  msg.User,
+			Message: msg.Params,
+		}
+
+	// USERNOTICE forms most event type messages to be parsed
+	case "USERNOTICE":
+		msgType := parseMessageType(msg)
+
+		switch msgType {
+		case MSG_RAID:
+			irc.outboundEvents <- parseRaidMessage(msg)
+		case MSG_BITS:
+			irc.outboundEvents <- parseBitsMessage(msg)
+		default:
+			log.Printf("Unknown USERNOTICE: %s", msg.String())
+		}
+
+	default:
+		log.Printf("<<< %s", msg.String())
+	}
+}
+
+// Attempt to parse a line from IRC to a Message
+func parseIrcLine(message string) Message {
 	// TrimSpace to get rid of /r/n
 	msgStr := strings.TrimSpace(string(message))
 	tokens := strings.Split(msgStr, " ")
@@ -214,7 +248,12 @@ func (irc *Irc) read() {
 
 	// Tags
 	if strings.HasPrefix(tokens[cursor], "@") {
-		msg.Tags = strings.Split(strings.TrimLeft(tokens[cursor], "@"), ";")
+		tagsSlice := strings.Split(strings.TrimLeft(tokens[cursor], "@"), ";")
+		for _, tag := range tagsSlice {
+			parts := strings.Split(tag, "=")
+			msg.AddTag(parts[0], parts[1])
+		}
+
 		log.Println(msg.Tags)
 		cursor++
 	}
@@ -229,33 +268,64 @@ func (irc *Irc) read() {
 
 	// Remaining cursor points should be Command and Params
 	msg.Command = tokens[cursor]
-	msg.Params = tokens[cursor+1:]
 
-	// Finally, strip excess for Message
-	contents := strings.TrimPrefix(strings.Join(msg.Params[1:], " "), ":")
+	// The combined String beyond the ":"
+	msg.Params = strings.TrimPrefix(strings.Join(tokens[cursor+1:], " "), ":")
+	return msg
+}
 
-	// Intercept for PING/PONG
-	if msg.Command == "PING" {
-		// log.Printf("> PING %s", contents)
-		irc.sendPong(msg.Params)
-		return
+// Parse a msgType from Tags to one of our iota constants, or MSG_SYSTEM if
+// unknown
+func parseMessageType(msg Message) int {
+
+	// Bits doesn't use msg-id, so we must check for that explicitly
+	if bits := msg.Tag("bits"); bits != "" {
+		return MSG_BITS
 	}
 
-	// TODO remove this when tested
-	if msg.Command == "PRIVMSG" {
-		irc.outboundEvents <- bot.Event{
-			Type:    bot.CHAT_MSG,
-			Sender:  msg.User,
-			Message: contents,
-		}
-	} else {
-		log.Println("<<< " + msg.String())
+	msgType := msg.Tag("msg-id")
+	switch msgType {
+	case "raid":
+		return MSG_RAID
+	default:
+		return MSG_SYSTEM
+	}
+}
+
+func parseRaidMessage(msg Message) bot.Event {
+	raider := msg.Tag("msg-param-displayName")
+	raidSizeStr := msg.Tag("msg-param-viewerCount")
+	raidSize, err := strconv.Atoi(raidSizeStr)
+	if err != nil {
+		log.Printf("ERROR: invalid raid size [%s], defaulting to 0", raidSizeStr)
+		raidSize = 0
+	}
+
+	return bot.Event{
+		Type:   bot.RAID,
+		Sender: raider,
+		Amount: raidSize,
+	}
+}
+
+func parseBitsMessage(msg Message) bot.Event {
+	cheerer := msg.Tag("display-name")
+	bitsStr := msg.Tag("bits")
+	amount, err := strconv.Atoi(bitsStr)
+	if err != nil {
+		log.Printf("ERROR: invalid bits [%s], defaulting to 0", bitsStr)
+	}
+
+	return bot.Event{
+		Type:   bot.BITS,
+		Sender: cheerer,
+		Amount: amount,
 	}
 }
 
 // Write writes a message to the IRC stream
 func (irc *Irc) write(message Message) error {
-	msgStr := fmt.Sprintf("%s %s", message.Command, strings.Join(message.Params, " "))
+	msgStr := fmt.Sprintf("%s %s", message.Command, message.Params)
 
 	// Lock since WriteMessage requires only one concurrent execution
 	if _, err := irc.conn.Write([]byte(msgStr)); err != nil {
