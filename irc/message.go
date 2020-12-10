@@ -1,6 +1,7 @@
 package irc
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 )
@@ -100,4 +101,8 @@ func (msg Message) BitsAmount() int {
 	}
 
 	return amount
+}
+
+func (msg Message) String() string {
+	return fmt.Sprintf("%s %s %s #%s :%s", msg.Tags, msg.User, msg.Command, msg.Channel, msg.Contents)
 }

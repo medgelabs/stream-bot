@@ -118,10 +118,6 @@ func (irc *Irc) PrivMsg(channel, message string) error {
 	return irc.write(msg)
 }
 
-func (msg Message) String() string {
-	return fmt.Sprintf("%s %s %s %s", msg.Tags, msg.User, msg.Command, msg.Contents)
-}
-
 func (irc *Irc) Close() error {
 	return irc.conn.Close()
 }
