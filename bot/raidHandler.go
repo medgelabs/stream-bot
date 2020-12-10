@@ -2,7 +2,6 @@ package bot
 
 import (
 	"fmt"
-	"log"
 	"time"
 )
 
@@ -11,8 +10,8 @@ func (bot *Bot) RegisterRaidHandler(messageFormat string) {
 		NewHandler(func(evt Event) {
 			if evt.IsRaidEvent() {
 				time.Sleep(3 * time.Second)
-				// bot.SendMessage(fmt.Sprintf(messageFormat, evt.Sender))
-				log.Println(fmt.Sprintf(messageFormat, evt.Sender))
+				bot.SendMessage(fmt.Sprintf(messageFormat, evt.Sender))
+				// log.Println(fmt.Sprintf(messageFormat, evt.Sender))
 			}
 		}),
 	)
