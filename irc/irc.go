@@ -15,26 +15,6 @@ const (
 	MAX_MSG_SIZE = 1024 // bytes
 )
 
-/*
-
-(Re)Sub:
-
-Tags: [badge-info=founder/4 badges=founder/0 color=#2E8B57 display-name=medgelabs emotes= flags= id=c1839900-5cf5-4660-8249-944ed3349173 login=medgelabs mod=0 msg-id=resub msg-param-cumulative-months=4 msg-param-months=0 msg-param-multimonth-duration=0 msg-param-multimonth-tenure=0 msg-param-should-share-streak=0 msg-param-sub-plan-name=Channel\sSubscription\s(pk_ninten) msg-param-sub-plan=1000 msg-param-was-gifted=false room-id=425558714 subscriber=1 system-msg=medgelabs\ssubscribed\sat\sTier\s1.\sThey've\ssubscribed\sfor\s4\smonths! tmi-sent-ts=1607433305720 user-id=62232210 user-type=]
-Mesage: tmi.twitch.tv USERNOTICE #nintenbrews :Oh snap it's a ninten
-
-
-Bits:
-
-Tags: [badge-info=founder/4 badges=founder/0 bits=100 color=#2E8B57 display-name=medgelabs emotes= flags= id=8e275b11-22d8-4cc9-a75f-c773b5b43a3f mod=0 room-id=425558714 subscriber=0 tmi-sent-ts=1607433450079 turbo=0 user-id=62232210 user-type=]
-Message: medgelabs: cheer100 HAPPY BIRTHDAY MRS. NINTEN
-
-Raid:
-
-Tags: [badge-info=founder/4 badges=founder/0 color=#2E8B57 display-name=medgelabs emotes= flags= id=bf27e226-96e3-4494-992d-d33cc0b2d39f login=medgelabs mod=0 msg-id=raid msg-param-displayName=medgelabs msg-param-login=medgelabs msg-param-profileImageURL=https://static-cdn.jtvnw.net/jtv_user_pictures/67a0147d-adec-4121-b5a3-a195f20e0fd0-profile_image-70x70.png msg-param-viewerCount=1 room-id=425558714 subscriber=1 system-msg=1\sraiders\sfrom\smedgelabs\shave\sjoined! tmi-sent-ts=1607438402227 user-id=62232210 user-type=]
-Message: tmi.twitch.tv USERNOTICE #nintenbrews
-
-*/
-
 // Irc client
 type Irc struct {
 	sync.Mutex
@@ -111,8 +91,8 @@ func (irc *Irc) Authenticate(nick, password string) error {
 // Join the given IRC channel. Must be called AFTER PASS and NICK
 func (irc *Irc) Join(channel string) error {
 	joinCmd := Message{
-		Command: "JOIN",
-		Params:  channel,
+		Command:  "JOIN",
+		Contents: channel,
 	}
 
 	return irc.write(joinCmd)
@@ -121,8 +101,8 @@ func (irc *Irc) Join(channel string) error {
 // Capability Request for IRC. DO NOT include the twitch.tv/ prefix
 func (irc *Irc) CapReq(capability string) error {
 	msg := Message{
-		Command: "CAP REQ",
-		Params:  ":twitch.tv/" + capability,
+		Command:  "CAP REQ",
+		Contents: ":twitch.tv/" + capability,
 	}
 
 	return irc.write(msg)
@@ -131,15 +111,11 @@ func (irc *Irc) CapReq(capability string) error {
 // PrivMsg sends a "private message" to the IRC, no prefix attached
 func (irc *Irc) PrivMsg(channel, message string) error {
 	msg := Message{
-		Command: "PRIVMSG",
-		Params:  channel + " :" + message,
+		Command:  "PRIVMSG",
+		Contents: channel + " :" + message,
 	}
 
 	return irc.write(msg)
-}
-
-func (msg Message) String() string {
-	return fmt.Sprintf("%s %s %s", msg.User, msg.Command, msg.Params)
 }
 
 func (irc *Irc) Close() error {
@@ -149,8 +125,8 @@ func (irc *Irc) Close() error {
 // SendPong reponds to the Ping heartbeat with the given body
 func (irc *Irc) sendPong(body string) {
 	msg := Message{
-		Command: "PONG",
-		Params:  body,
+		Command:  "PONG",
+		Contents: body,
 	}
 
 	if err := irc.write(msg); err != nil {
@@ -161,8 +137,8 @@ func (irc *Irc) sendPong(body string) {
 // SendPass sends the PASS command to the IRC
 func (irc *Irc) sendPass(token string) error {
 	passCmd := Message{
-		Command: "PASS",
-		Params:  token,
+		Command:  "PASS",
+		Contents: token,
 	}
 
 	return irc.write(passCmd)
@@ -171,8 +147,8 @@ func (irc *Irc) sendPass(token string) error {
 // SendNick sends the NICK command to the IRC
 func (irc *Irc) sendNick(nick string) error {
 	nickCmd := Message{
-		Command: "NICK",
-		Params:  nick,
+		Command:  "NICK",
+		Contents: nick,
 	}
 
 	return irc.write(nickCmd)
@@ -196,8 +172,7 @@ func (irc *Irc) read() {
 
 	// Intercept for PING/PONG
 	if msg.Command == "PING" {
-		// log.Printf("> PING %s", contents)
-		irc.sendPong(msg.Params)
+		irc.sendPong(msg.Contents)
 		return
 	}
 
@@ -214,7 +189,7 @@ func (irc *Irc) read() {
 		} else {
 			evt := bot.NewChatEvent()
 			evt.Sender = msg.User
-			evt.Message = msg.Params
+			evt.Message = msg.Contents
 			irc.sendEvent(evt)
 		}
 
@@ -253,8 +228,6 @@ func parseIrcLine(message string) Message {
 			parts := strings.Split(tag, "=")
 			msg.AddTag(parts[0], parts[1])
 		}
-
-		log.Println(msg.Tags)
 		cursor++
 	}
 
@@ -266,17 +239,23 @@ func parseIrcLine(message string) Message {
 		cursor++
 	}
 
-	// Remaining cursor points should be Command and Params
+	// Next cursor point should be Command
 	msg.Command = tokens[cursor]
+	cursor++
 
-	// The combined String beyond the ":"
-	msg.Params = strings.TrimPrefix(strings.Join(tokens[cursor+1:], " "), ":")
+	// Then, Channel
+	msg.Channel = strings.TrimPrefix(tokens[cursor], "#")
+	cursor++
+
+	// The rest should be the combined String beyond the ":"
+	combinedContents := strings.Join(tokens[cursor:], " ")
+	msg.Contents = strings.TrimPrefix(combinedContents, ":")
 	return msg
 }
 
-// Write writes a message to the IRC stream
+// Write a message to the IRC stream
 func (irc *Irc) write(message Message) error {
-	msgStr := fmt.Sprintf("%s %s", message.Command, message.Params)
+	msgStr := fmt.Sprintf("%s %s", message.Command, message.Contents)
 
 	// Lock since WriteMessage requires only one concurrent execution
 	if _, err := irc.conn.Write([]byte(msgStr)); err != nil {

@@ -1,6 +1,7 @@
 package irc
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 )
@@ -16,10 +17,11 @@ const (
 
 // Message represents a line of text from the IRC stream
 type Message struct {
-	Tags    map[string]string
-	User    string
-	Command string
-	Params  string // aka message content
+	Tags     map[string]string
+	User     string
+	Command  string
+	Channel  string
+	Contents string
 }
 
 func NewMessage() Message {
@@ -45,7 +47,7 @@ func (msg *Message) AddTag(tag, value string) {
 
 // Parse a msgType from Tags on a USERNOTICE to one of our iota constants, or MSG_SYSTEM if
 // unknown
-func (msg Message) parseMessageType() int {
+func (msg Message) parseUserNoticeMessageType() int {
 	msgType := msg.Tag("msg-id")
 
 	switch msgType {
@@ -58,13 +60,15 @@ func (msg Message) parseMessageType() int {
 
 // Check if message is a Raid message
 func (msg Message) IsRaidMessage() bool {
-	return msg.parseMessageType() == MSG_RAID
+	return msg.parseUserNoticeMessageType() == MSG_RAID
 }
 
+// Return the Raider for a Raid message
 func (msg Message) Raider() string {
 	return msg.Tag("msg-param-displayName")
 }
 
+// Return the Raid Size for a Raid message
 func (msg Message) RaidSize() int {
 	raidSizeStr := msg.Tag("msg-param-viewerCount")
 	raidSize, err := strconv.Atoi(raidSizeStr)
@@ -82,10 +86,12 @@ func (msg Message) IsBitsMessage() bool {
 	return err == nil
 }
 
+// Return the User that donated bits in a Bits message
 func (msg Message) BitsSender() string {
 	return msg.Tag("display-name")
 }
 
+// Return the amount of bits donated in a Bits message
 func (msg Message) BitsAmount() int {
 	bitsStr := msg.Tag("bits")
 	amount, err := strconv.Atoi(bitsStr)
@@ -95,4 +101,8 @@ func (msg Message) BitsAmount() int {
 	}
 
 	return amount
+}
+
+func (msg Message) String() string {
+	return fmt.Sprintf("%s %s %s #%s :%s", msg.Tags, msg.User, msg.Command, msg.Channel, msg.Contents)
 }

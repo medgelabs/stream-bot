@@ -9,7 +9,6 @@ import (
 	"medgebot/irc"
 	"medgebot/ledger"
 	"medgebot/secret"
-	// "medgebot/twitch"
 	"medgebot/ws"
 	"strings"
 	"time"
@@ -129,7 +128,6 @@ func main() {
 		}
 
 		// pre-seed names we don't want greeted
-		// TODO make variadic
 		ledger.Add("tmi.twitch.tv")
 		ledger.Add("streamlabs")
 		ledger.Add("nightbot")
