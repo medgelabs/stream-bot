@@ -1,16 +1,18 @@
 package bot
 
 import (
+	"fmt"
 	"log"
+	"time"
 )
 
 func (bot *Bot) RegisterRaidHandler(messageFormat string) {
 	bot.RegisterHandler(
 		NewHandler(func(evt Event) {
 			if evt.IsRaidEvent() {
-				// TODO shout out the raider
+				time.Sleep(3 * time.Second)
 				// bot.SendMessage(fmt.Sprintf(messageFormat, evt.Sender))
-				log.Printf("> Raid of %d from %s!", evt.Amount, evt.Sender)
+				log.Println(fmt.Sprintf(messageFormat, evt.Sender))
 			}
 		}),
 	)

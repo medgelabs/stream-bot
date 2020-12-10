@@ -81,7 +81,7 @@ func TestBitsMessageParsing(t *testing.T) {
 	}
 }
 
-func TestParseMessageType(t *testing.T) {
+func TestParseUserNoticeMessageType(t *testing.T) {
 	tests := []struct {
 		description string
 		input       string
@@ -91,7 +91,7 @@ func TestParseMessageType(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		result := parseIrcLine(test.input).parseMessageType()
+		result := parseIrcLine(test.input).parseUserNoticeMessageType()
 		if result != test.expected {
 			t.Fatalf("Expected %d message type, but got %d for %s", test.expected, result, test.description)
 		}

@@ -19,8 +19,6 @@ const (
 	MAX_RETRIES = 5
 
 	CHANNEL_POINT_TOPIC = "channel-points-channel-v1"
-	SUBS_TOPIC          = "channel-subscribe-events-v1"
-	BITS_TOPIC          = "channel-bits-events-v2"
 )
 
 type PubSubClient struct {
