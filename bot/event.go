@@ -6,6 +6,7 @@ const (
 	SUB
 	GIFTSUB
 	POINT_REDEMPTION
+	RAID
 )
 
 // All-encompassing model for Events that the Bot understands, such as:
@@ -13,6 +14,7 @@ const (
 // Bit donations
 // Subscriptions / Re-subscriptions / Gifted Subscriptions
 // Point redemptions
+// Raid
 type Event struct {
 	Type      int    // Identify what kind of Event we are receiving
 	Sender    string // Source user, empty if not tied to a user
@@ -70,4 +72,14 @@ func NewPointsEvent() Event {
 
 func (evt Event) IsPointsEvent() bool {
 	return evt.Type == POINT_REDEMPTION
+}
+
+func NewRaidEvent() Event {
+	return Event{
+		Type: RAID,
+	}
+}
+
+func (evt Event) IsRaidEvent() bool {
+	return evt.Type == RAID
 }

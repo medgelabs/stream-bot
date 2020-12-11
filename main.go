@@ -9,7 +9,6 @@ import (
 	"medgebot/irc"
 	"medgebot/ledger"
 	"medgebot/secret"
-	"medgebot/twitch"
 	"medgebot/ws"
 	"strings"
 	"time"
@@ -27,6 +26,8 @@ func main() {
 	var enableAll bool
 	var enableGreeter bool
 	var enableCommands bool
+	var enableRaidMessage bool
+	var enableBitsMessage bool
 
 	flag.StringVar(&channel, "channel", "", "Channel name, without the #, to join")
 	flag.StringVar(&nick, "nick", "", "Nickname to join Chat with")
@@ -36,6 +37,8 @@ func main() {
 	flag.BoolVar(&enableAll, "all", false, "Enable all features")
 	flag.BoolVar(&enableGreeter, "greeter", false, "Enable the auto-greeter")
 	flag.BoolVar(&enableCommands, "commands", false, "Enable Command processing")
+	flag.BoolVar(&enableRaidMessage, "raids", false, "Enable Raid auto-shoutout")
+	flag.BoolVar(&enableBitsMessage, "bits", false, "Enable Bits auto-thanks")
 
 	flag.Parse()
 
@@ -76,8 +79,6 @@ func main() {
 
 	// IRC
 	ircConfig := irc.Config{
-		Scheme:   "wss",
-		Host:     "irc-ws.chat.twitch.tv:443",
 		Nick:     nick,
 		Password: fmt.Sprintf("oauth:%s", password),
 		Channel:  channel,
@@ -98,21 +99,21 @@ func main() {
 	}
 
 	// PubSub
-	channelIdKey := fmt.Sprintf("%s.channelId", strings.Trim(channel, "#"))
-	channelId := viper.GetString(channelIdKey)
-	pubSub := twitch.NewPubSubClient(channelId, password)
-	defer pubSub.Close()
+	// channelIdKey := fmt.Sprintf("%s.channelId", strings.Trim(channel, "#"))
+	// channelId := viper.GetString(channelIdKey)
+	// pubSub := twitch.NewPubSubClient(channelId, password)
+	// defer pubSub.Close()
 
-	err = pubSub.Connect("wss", "pubsub-edge.twitch.tv")
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
+	// err = pubSub.Connect("wss", "pubsub-edge.twitch.tv")
+	// if err != nil {
+	// log.Fatalf(err.Error())
+	// }
 
-	go pubSub.Start()
+	// go pubSub.Start()
 
-	if err := chatBot.RegisterInboundPlugin(pubSub); err != nil {
-		log.Fatalf("FATAL: failed to register PubSub: %v", err)
-	}
+	// if err := chatBot.RegisterInboundPlugin(pubSub); err != nil {
+	// log.Fatalf("FATAL: failed to register PubSub: %v", err)
+	// }
 	/// Plugin Registration END ///
 
 	if enableCommands || enableAll {
@@ -127,7 +128,6 @@ func main() {
 		}
 
 		// pre-seed names we don't want greeted
-		// TODO make variadic
 		ledger.Add("tmi.twitch.tv")
 		ledger.Add("streamlabs")
 		ledger.Add("nightbot")
@@ -140,7 +140,7 @@ func main() {
 
 		// Greeter config
 		var greetConfig greeter.Config
-		confKey := fmt.Sprintf("greeter.%s", strings.Trim(channel, "#"))
+		confKey := fmt.Sprintf("%s.greeter", strings.Trim(channel, "#"))
 		confSub := viper.Sub(confKey)
 		if confSub == nil {
 			log.Fatalf("FATAL: key %s not found in config", confKey)
@@ -149,6 +149,18 @@ func main() {
 		confSub.Unmarshal(&greetConfig)
 		greetBot := greeter.New(greetConfig, ledger)
 		chatBot.RegisterGreeter(greetBot)
+	}
+
+	if enableRaidMessage || enableAll {
+		raidKey := fmt.Sprintf("%s.raid.messageFormat", strings.Trim(channel, "#"))
+		raidMessageFormat := viper.GetString(raidKey)
+		chatBot.RegisterRaidHandler(raidMessageFormat)
+	}
+
+	if enableBitsMessage || enableAll {
+		bitsKey := fmt.Sprintf("%s.bits.messageFormat", strings.Trim(channel, "#"))
+		bitsMessageFormat := viper.GetString(bitsKey)
+		chatBot.RegisterBitsHandler(bitsMessageFormat)
 	}
 
 	if err := chatBot.Start(); err != nil {
