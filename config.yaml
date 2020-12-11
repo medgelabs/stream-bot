@@ -1,3 +1,6 @@
+# Note for messageFormat:
+#   subs: months first (%d), then subscriber (%s)
+#   giftsubs: sender first (%s), then recipient (%s)
 medgelabs:
   channelId: 62232210
   greeter:
@@ -8,6 +11,10 @@ medgelabs:
     messageFormat: "!so @%s"
   bits:
     messageFormat: "Thank you for the research @%s!"
+  subs:
+    messageFormat: "Thank you for %d months in the Lab, @%s!"
+  giftsubs:
+    messageFormat: "@%s loaned their lab coat to @%s!"
 sorceryandsarcasm:
   channelId: 66490190
   greeter:

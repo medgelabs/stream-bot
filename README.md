@@ -136,6 +136,20 @@ map[badge-info:subscriber/6 badges:moderator/1,subscriber/6,bits/100000 color:#2
 <<< tmi.twitch.tv USERNOTICE #CHANNEL
 ```
 
+Mass Gift Subs:
+
+Note: This message shows first, but also generates 5 individual Sub USERNOTICE messages where msg-id=subgift
+
+```
+2020/12/11 09:22:06 Unknown USERNOTICE: map[badge-info:subscriber/3 badges:broadcaster/1,subscriber/0 color:#2E8B57 display-name:medgelabs emotes: flags: id:059d0e94-59d5-4ded-95d5-c5d6bb58ba0b login:medgelabs mod:0 msg-id:submysterygift msg-param-mass-gift-count:5 msg-param-origin-id:07\s23\s61\s03\sa4\sa1\s5a\sb0\s72\s4a\s72\s2d\s08\sdd\sda\s57\sc8\s24\sf6\s17 msg-param-sender-count:0 msg-param-sub-plan:1000 room-id:62232210 subscriber:1 system-msg:medgelabs\sis\sgifting\s5\sTier\s1\sSubs\sto\smedgelabs's\scommunity! tmi-sent-ts:1607696526324 user-id:62232210 user-type:] tmi.twitch.tv USERNOTICE #medgelabs
+```
+
+Sub Reward Tier Unlock:
+
+```
+2020/12/11 09:22:07 Unknown USERNOTICE: map[badge-info:subscriber/3 badges:broadcaster/1,subscriber/0 color:#2E8B57 display-name:medgelabs emotes: flags: id:0a5ed974-2db1-48c5-89fe-c6927be40db0 login:medgelabs mod:0 msg-id:rewardgift msg-param-domain:holiday_2020_megacommerce msg-param-selected-count:25 msg-param-total-reward-count:25 msg-param-trigger-amount:5 msg-param-trigger-type:SUBGIFT room-id:62232210 subscriber:1 system-msg:medgelabs's\sGift\sshared\srewards\sto\s25\sothers\sin\sChat! tmi-sent-ts:1607696527363 user-id:62232210 user-type:] tmi.twitch.tv USERNOTICE #medgelabs
+```
+
 Raid:
 
 ```

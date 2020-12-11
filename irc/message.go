@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -45,6 +46,48 @@ func (msg *Message) AddTag(tag, value string) {
 	msg.Tags[tag] = value
 }
 
+// Attempt to parse a line from IRC to a Message
+func parseIrcLine(message string) Message {
+	// TrimSpace to get rid of /r/n
+	msgStr := strings.TrimSpace(string(message))
+	tokens := strings.Split(msgStr, " ")
+
+	// If tags are present, parse them out
+	msg := NewMessage()
+	cursor := 0
+
+	// Tags
+	if strings.HasPrefix(tokens[cursor], "@") {
+		tagsSlice := strings.Split(strings.TrimLeft(tokens[cursor], "@"), ";")
+		for _, tag := range tagsSlice {
+			parts := strings.Split(tag, "=")
+			msg.AddTag(parts[0], parts[1])
+		}
+		cursor++
+	}
+
+	// Prefix, therefore parse username
+	if strings.HasPrefix(tokens[cursor], ":") {
+		rawUsername := strings.Split(tokens[cursor], ":")[1]
+		username := strings.Split(rawUsername, "!")[0]
+		msg.User = username
+		cursor++
+	}
+
+	// Next cursor point should be Command
+	msg.Command = tokens[cursor]
+	cursor++
+
+	// Then, Channel
+	msg.Channel = strings.TrimPrefix(tokens[cursor], "#")
+	cursor++
+
+	// The rest should be the combined String beyond the ":"
+	combinedContents := strings.Join(tokens[cursor:], " ")
+	msg.Contents = strings.TrimPrefix(combinedContents, ":")
+	return msg
+}
+
 // Parse a msgType from Tags on a USERNOTICE to one of our iota constants, or MSG_SYSTEM if
 // unknown
 func (msg Message) parseUserNoticeMessageType() int {
@@ -53,6 +96,10 @@ func (msg Message) parseUserNoticeMessageType() int {
 	switch msgType {
 	case "raid":
 		return MSG_RAID
+	case "sub", "resub":
+		return MSG_SUB
+	case "subgift":
+		return MSG_GIFTSUB
 	default:
 		return MSG_SYSTEM
 	}
@@ -101,6 +148,43 @@ func (msg Message) BitsAmount() int {
 	}
 
 	return amount
+}
+
+// Check if message is a Sub/Resub message
+func (msg Message) IsSubscriptionMessage() bool {
+	return msg.parseUserNoticeMessageType() == MSG_SUB
+}
+
+// Return the Subscriber for a Subscription message
+func (msg Message) Subscriber() string {
+	return msg.Tag("display-name") // because Twitch is inconsistent
+}
+
+// Return the number of months subscribed for a Subscription message
+func (msg Message) SubMonths() int {
+	monthsStr := msg.Tag("msg-param-cumulative-months")
+	months, err := strconv.Atoi(monthsStr)
+	if err != nil {
+		log.Printf("ERROR: invalid months [%s], defaulting to 0", monthsStr)
+		return 0
+	}
+
+	return months
+}
+
+// Check if message is a Sub/Resub message
+func (msg Message) IsGiftSubscriptionMessage() bool {
+	return msg.parseUserNoticeMessageType() == MSG_GIFTSUB
+}
+
+// Return the Recipient of a Gift Subscription
+func (msg Message) GiftRecipient() string {
+	return msg.Tag("msg-param-recipient-display-name")
+}
+
+// Return the Sender of a Gift Subscription
+func (msg Message) GiftSender() string {
+	return msg.Tag("display-name")
 }
 
 func (msg Message) String() string {

@@ -28,6 +28,7 @@ func main() {
 	var enableCommands bool
 	var enableRaidMessage bool
 	var enableBitsMessage bool
+	var enableSubsMessage bool
 
 	flag.StringVar(&channel, "channel", "", "Channel name, without the #, to join")
 	flag.StringVar(&nick, "nick", "", "Nickname to join Chat with")
@@ -39,6 +40,7 @@ func main() {
 	flag.BoolVar(&enableCommands, "commands", false, "Enable Command processing")
 	flag.BoolVar(&enableRaidMessage, "raids", false, "Enable Raid auto-shoutout")
 	flag.BoolVar(&enableBitsMessage, "bits", false, "Enable Bits auto-thanks")
+	flag.BoolVar(&enableSubsMessage, "subs", false, "Enable Subs auto-thanks")
 
 	flag.Parse()
 
@@ -161,6 +163,14 @@ func main() {
 		bitsKey := fmt.Sprintf("%s.bits.messageFormat", strings.Trim(channel, "#"))
 		bitsMessageFormat := viper.GetString(bitsKey)
 		chatBot.RegisterBitsHandler(bitsMessageFormat)
+	}
+
+	if enableSubsMessage || enableAll {
+		subsKey := fmt.Sprintf("%s.subs.messageFormat", strings.Trim(channel, "#"))
+		subsMessageFormat := viper.GetString(subsKey)
+		giftSubsKey := fmt.Sprintf("%s.giftsubs.messageFormat", strings.Trim(channel, "#"))
+		giftSubsMessageFormat := viper.GetString(giftSubsKey)
+		chatBot.RegisterSubsHandler(subsMessageFormat, giftSubsMessageFormat)
 	}
 
 	if err := chatBot.Start(); err != nil {
