@@ -2,57 +2,41 @@ package irc
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"medgebot/bot"
-	"net/url"
 	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
+)
 
-	"github.com/gorilla/websocket"
+const (
+	MAX_MSG_SIZE = 1024 // bytes
 )
 
 // Irc client
 type Irc struct {
 	sync.Mutex
-	conn           *websocket.Conn
+	conn           io.ReadWriteCloser
 	inboundEvents  chan bot.Event
 	outboundEvents chan<- bot.Event
 }
 
 type Config struct {
-	Scheme   string
-	Host     string
 	Nick     string
 	Password string
 	Channel  string
 }
 
-// Message represents a line of text from the IRC stream
-type Message struct {
-	Tags    []string
-	User    string
-	Command string
-	Params  []string
-}
-
-func (msg Message) String() string {
-	return fmt.Sprintf("%s %s %s", msg.User, msg.Command, strings.Join(msg.Params, " "))
-}
-
-func NewClient() *Irc {
+func NewClient(conn io.ReadWriteCloser) *Irc {
 	return &Irc{
-		conn:          nil,
+		conn:          conn,
 		inboundEvents: make(chan bot.Event),
 	}
 }
 
 func (irc *Irc) Start(config Config) error {
-	if err := irc.Connect(config.Scheme, config.Host); err != nil {
-		return errors.Errorf("ERROR: irc connect - %s", err)
-	}
-
 	if err := irc.Authenticate(config.Nick, config.Password); err != nil {
 		return errors.Errorf("FATAL: irc authentication failure - %s", err)
 	}
@@ -64,6 +48,11 @@ func (irc *Irc) Start(config Config) error {
 	// Command Capability Request for UserNotices (raids, subs, etc)
 	if err := irc.CapReq("commands"); err != nil {
 		return errors.Errorf("FATAL: irc CapReq COMMANDS failed: %s", err)
+	}
+
+	// Tags for bits/subs/raids metadata
+	if err := irc.CapReq("tags"); err != nil {
+		return errors.Errorf("FATAL: irc CapReq TAGS failed: %s", err)
 	}
 
 	// Read loop for receiving messages from IRC
@@ -80,19 +69,6 @@ func (irc *Irc) Start(config Config) error {
 		}
 	}()
 
-	return nil
-}
-
-func (irc *Irc) Connect(scheme, server string) error {
-	u := url.URL{Scheme: scheme, Host: server, Path: "/"}
-	log.Println("connecting to " + u.String())
-
-	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
-	if err != nil {
-		return err
-	}
-
-	irc.conn = conn
 	return nil
 }
 
@@ -115,8 +91,8 @@ func (irc *Irc) Authenticate(nick, password string) error {
 // Join the given IRC channel. Must be called AFTER PASS and NICK
 func (irc *Irc) Join(channel string) error {
 	joinCmd := Message{
-		Command: "JOIN",
-		Params:  []string{channel},
+		Command:  "JOIN",
+		Contents: channel,
 	}
 
 	return irc.write(joinCmd)
@@ -125,8 +101,8 @@ func (irc *Irc) Join(channel string) error {
 // Capability Request for IRC. DO NOT include the twitch.tv/ prefix
 func (irc *Irc) CapReq(capability string) error {
 	msg := Message{
-		Command: "CAP REQ",
-		Params:  []string{":twitch.tv/" + capability},
+		Command:  "CAP REQ",
+		Contents: ":twitch.tv/" + capability,
 	}
 
 	return irc.write(msg)
@@ -135,18 +111,22 @@ func (irc *Irc) CapReq(capability string) error {
 // PrivMsg sends a "private message" to the IRC, no prefix attached
 func (irc *Irc) PrivMsg(channel, message string) error {
 	msg := Message{
-		Command: "PRIVMSG",
-		Params:  []string{channel, ":" + message},
+		Command:  "PRIVMSG",
+		Contents: channel + " :" + message,
 	}
 
 	return irc.write(msg)
 }
 
+func (irc *Irc) Close() error {
+	return irc.conn.Close()
+}
+
 // SendPong reponds to the Ping heartbeat with the given body
-func (irc *Irc) sendPong(body []string) {
+func (irc *Irc) sendPong(body string) {
 	msg := Message{
-		Command: "PONG",
-		Params:  body,
+		Command:  "PONG",
+		Contents: body,
 	}
 
 	if err := irc.write(msg); err != nil {
@@ -154,30 +134,100 @@ func (irc *Irc) sendPong(body []string) {
 	}
 }
 
-func (irc *Irc) Close() {
-	irc.conn.Close()
+// SendPass sends the PASS command to the IRC
+func (irc *Irc) sendPass(token string) error {
+	passCmd := Message{
+		Command:  "PASS",
+		Contents: token,
+	}
+
+	return irc.write(passCmd)
+}
+
+// SendNick sends the NICK command to the IRC
+func (irc *Irc) sendNick(nick string) error {
+	nickCmd := Message{
+		Command:  "NICK",
+		Contents: nick,
+	}
+
+	return irc.write(nickCmd)
 }
 
 // Read reads from the IRC stream, one line at a time
 func (irc *Irc) read() {
-	_, message, err := irc.conn.ReadMessage()
+	buff := make([]byte, MAX_MSG_SIZE)
+	len, err := irc.conn.Read(buff)
 	if err != nil {
-		// TODO check if conn is open. If not - reconnect?
 		log.Printf("ERROR: read irc - %v", err)
 		return
 	}
 
+	if len == 0 {
+		log.Println("Empty message buffer")
+		return
+	}
+
+	msg := parseIrcLine(string(buff))
+
+	// Intercept for PING/PONG
+	if msg.Command == "PING" {
+		irc.sendPong(msg.Contents)
+		return
+	}
+
+	// Now, convert to bot.Event
+	switch msg.Command {
+
+	// PRIVMSG is almost always, either, a chat message or bits cheer
+	case "PRIVMSG":
+		if msg.IsBitsMessage() {
+			evt := bot.NewBitsEvent()
+			evt.Sender = msg.BitsSender()
+			evt.Amount = msg.BitsAmount()
+			irc.sendEvent(evt)
+		} else {
+			evt := bot.NewChatEvent()
+			evt.Sender = msg.User
+			evt.Message = msg.Contents
+			irc.sendEvent(evt)
+		}
+
+	// USERNOTICE forms most event type messages to be parsed
+	case "USERNOTICE":
+		switch {
+		case msg.IsRaidMessage():
+			evt := bot.NewRaidEvent()
+			evt.Sender = msg.Raider()
+			evt.Amount = msg.RaidSize()
+			irc.sendEvent(evt)
+		default:
+			log.Printf("Unknown USERNOTICE: %s", msg.String())
+		}
+
+	default:
+		log.Printf("<<< %s", msg.String())
+	}
+}
+
+// TODO should this be in message.go?
+// Attempt to parse a line from IRC to a Message
+func parseIrcLine(message string) Message {
 	// TrimSpace to get rid of /r/n
 	msgStr := strings.TrimSpace(string(message))
 	tokens := strings.Split(msgStr, " ")
 
 	// If tags are present, parse them out
-	msg := Message{}
+	msg := NewMessage()
 	cursor := 0
 
 	// Tags
 	if strings.HasPrefix(tokens[cursor], "@") {
-		msg.Tags = strings.Split(strings.TrimLeft(tokens[cursor], "@"), ";")
+		tagsSlice := strings.Split(strings.TrimLeft(tokens[cursor], "@"), ";")
+		for _, tag := range tagsSlice {
+			parts := strings.Split(tag, "=")
+			msg.AddTag(parts[0], parts[1])
+		}
 		cursor++
 	}
 
@@ -189,64 +239,26 @@ func (irc *Irc) read() {
 		cursor++
 	}
 
-	// Remaining cursor points should be Command and Params
+	// Next cursor point should be Command
 	msg.Command = tokens[cursor]
-	msg.Params = tokens[cursor+1:]
+	cursor++
 
-	// Finally, strip excess for Message
-	contents := strings.TrimPrefix(strings.Join(msg.Params[1:], " "), ":")
+	// Then, Channel
+	msg.Channel = strings.TrimPrefix(tokens[cursor], "#")
+	cursor++
 
-	// Intercept for PING/PONG
-	if msg.Command == "PING" {
-		// log.Printf("> PING %s", contents)
-		irc.sendPong(msg.Params)
-		return
-	}
-
-	// TODO remove this when tested
-	if msg.Command == "PRIVMSG" {
-		irc.outboundEvents <- bot.Event{
-			Type:    bot.CHAT_MSG,
-			Sender:  msg.User,
-			Message: contents,
-		}
-	} else {
-		log.Println("<<< " + msg.String())
-	}
+	// The rest should be the combined String beyond the ":"
+	combinedContents := strings.Join(tokens[cursor:], " ")
+	msg.Contents = strings.TrimPrefix(combinedContents, ":")
+	return msg
 }
 
-// SendPass sends the PASS command to the IRC
-func (irc *Irc) sendPass(token string) error {
-	passCmd := Message{
-		Command: "PASS",
-		Params:  []string{token},
-	}
-
-	return irc.write(passCmd)
-}
-
-// SendNick sends the NICK command to the IRC
-func (irc *Irc) sendNick(nick string) error {
-	nickCmd := Message{
-		Command: "NICK",
-		Params:  []string{nick},
-	}
-
-	return irc.write(nickCmd)
-}
-
-// Write writes a message to the IRC stream
+// Write a message to the IRC stream
 func (irc *Irc) write(message Message) error {
-	if irc.conn == nil {
-		return errors.New("Irc.conn is nil. Did you forget to call Irc.Connect()?")
-	}
-
-	msgStr := fmt.Sprintf("%s %s", message.Command, strings.Join(message.Params, " "))
+	msgStr := fmt.Sprintf("%s %s", message.Command, message.Contents)
 
 	// Lock since WriteMessage requires only one concurrent execution
-	irc.Mutex.Lock()
-	defer irc.Mutex.Unlock()
-	if err := irc.conn.WriteMessage(websocket.TextMessage, []byte(msgStr)); err != nil {
+	if _, err := irc.conn.Write([]byte(msgStr)); err != nil {
 		return err
 	}
 
@@ -263,4 +275,9 @@ func (irc *Irc) GetChannel() chan<- bot.Event {
 
 func (irc *Irc) SetChannel(outbound chan<- bot.Event) {
 	irc.outboundEvents = outbound
+}
+
+// Send Event to the bot
+func (irc *Irc) sendEvent(evt bot.Event) {
+	irc.outboundEvents <- evt
 }
