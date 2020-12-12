@@ -2,6 +2,7 @@ package bot
 
 import (
 	"errors"
+	"strings"
 	"sync"
 )
 
@@ -40,6 +41,11 @@ func (bot *Bot) Start() error {
 
 // PrivMsg sends a message to the given channel, without prefix
 func (bot *Bot) SendMessage(message string) {
+	// TODO do we ever need to send empty messages?
+	if strings.TrimSpace(message) == "" {
+		return
+	}
+
 	evt := NewChatEvent()
 	evt.Message = message
 

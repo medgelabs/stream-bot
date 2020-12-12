@@ -7,13 +7,7 @@ import (
 
 func TestGreet(t *testing.T) {
 	ledger := ledger.NewInMemoryLedger()
-	config := Config{
-		MessageFormat: "Welcome %s",
-	}
+	New(&ledger)
 
-	expected := "Welcome Barry"
-	g := New(config, &ledger)
-	if greeting := g.Greet("Barry"); greeting != expected {
-		t.Errorf("Incorrect greeting. Got %s, expecting %s", greeting, expected)
-	}
+	// TODO test HasNotGreeted() and RecordGreeting()
 }

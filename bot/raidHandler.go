@@ -1,16 +1,13 @@
 package bot
 
-import (
-	"fmt"
-	"time"
-)
+import "log"
 
-func (bot *Bot) RegisterRaidHandler(messageFormat string) {
+func (bot *Bot) RegisterRaidHandler(messageTemplate HandlerTemplate) {
 	bot.RegisterHandler(
 		NewHandler(func(evt Event) {
 			if evt.IsRaidEvent() {
-				time.Sleep(3 * time.Second)
-				bot.SendMessage(fmt.Sprintf(messageFormat, evt.Sender))
+				log.Printf("%s is raiding with %d raiders!", evt.Sender, evt.Amount)
+				bot.SendMessage(messageTemplate.Parse(evt))
 			}
 		}),
 	)

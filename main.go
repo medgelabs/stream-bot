@@ -142,22 +142,27 @@ func main() {
 		ledger.Add(nick + "@tmi.twitch.tv")
 
 		// Greeter config
-		var greetConfig greeter.Config
-		confKey := fmt.Sprintf("%s.greeter", strings.Trim(channel, "#"))
-		confSub := viper.Sub(confKey)
-		if confSub == nil {
-			log.Fatalf("FATAL: key %s not found in config", confKey)
+		greetKey := fmt.Sprintf("%s.greeter.messageFormat", strings.Trim(channel, "#"))
+		greetMessageFormat := viper.GetString(greetKey)
+		greetBot := greeter.New(ledger)
+		greetTempl, err := template.New("greeter").Parse(greetMessageFormat)
+		if err != nil {
+			log.Fatalf("FATAL: invalid Greeter message in config - %v", err)
 		}
 
-		confSub.Unmarshal(&greetConfig)
-		greetBot := greeter.New(greetConfig, ledger)
-		chatBot.RegisterGreeter(greetBot)
+		chatBot.RegisterGreeter(greetBot, bot.NewHandlerTemplate(greetTempl))
 	}
 
 	if enableRaidMessage || enableAll {
 		raidKey := fmt.Sprintf("%s.raid.messageFormat", strings.Trim(channel, "#"))
 		raidMessageFormat := viper.GetString(raidKey)
-		chatBot.RegisterRaidHandler(raidMessageFormat)
+
+		raidTempl, err := template.New("raids").Parse(raidMessageFormat)
+		if err != nil {
+			log.Fatalf("FATAL: invalid raid message in config - %v", err)
+		}
+		chatBot.RegisterRaidHandler(
+			bot.NewHandlerTemplate(raidTempl))
 	}
 
 	if enableBitsMessage || enableAll {
@@ -169,15 +174,27 @@ func main() {
 			log.Fatalf("FATAL: invalid bits message in config - %v", err)
 		}
 
-		chatBot.RegisterBitsHandler(bitsTempl)
+		chatBot.RegisterBitsHandler(
+			bot.NewHandlerTemplate(bitsTempl))
 	}
 
 	if enableSubsMessage || enableAll {
 		subsKey := fmt.Sprintf("%s.subs.messageFormat", strings.Trim(channel, "#"))
 		subsMessageFormat := viper.GetString(subsKey)
+		subsTempl, err := template.New("subs").Parse(subsMessageFormat)
+		if err != nil {
+			log.Fatalf("FATAL: invalid subs message in config - %v", err)
+		}
+
 		giftSubsKey := fmt.Sprintf("%s.giftsubs.messageFormat", strings.Trim(channel, "#"))
 		giftSubsMessageFormat := viper.GetString(giftSubsKey)
-		chatBot.RegisterSubsHandler(subsMessageFormat, giftSubsMessageFormat)
+		giftSubsTempl, err := template.New("giftsubs").Parse(giftSubsMessageFormat)
+		if err != nil {
+			log.Fatalf("FATAL: invalid subs message in config - %v", err)
+		}
+
+		chatBot.RegisterSubsHandler(
+			bot.NewHandlerTemplate(subsTempl), bot.NewHandlerTemplate(giftSubsTempl))
 	}
 
 	if err := chatBot.Start(); err != nil {

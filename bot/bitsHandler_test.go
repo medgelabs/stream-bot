@@ -11,7 +11,9 @@ func TestBitsHandler(t *testing.T) {
 
 	// Initialize Bits Handler
 	tmpl := makeTemplate("testBits", "Thanks for the {{.Amount}} bits {{.Sender}}")
-	bot.RegisterBitsHandler(tmpl)
+	bot.RegisterBitsHandler(HandlerTemplate{
+		templ: tmpl,
+	})
 
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()

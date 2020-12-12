@@ -9,19 +9,15 @@ const (
 	RAID
 )
 
-// All-encompassing model for Events that the Bot understands, such as:
-// Chat messages
-// Bit donations
-// Subscriptions / Re-subscriptions / Gifted Subscriptions
-// Point redemptions
-// Raid
+// All-encompassing model for Events that the Bot understands
+// NOTE: This struct is referenced by config.yaml. Make changes carefully
 type Event struct {
 	Type      int    // Identify what kind of Event we are receiving
 	Sender    string // Source user, empty if not tied to a user
 	Recipient string // Target user, if applicable (i.e gifted subscription)
-	Title     string // title of the Channel Point redemption made
 	Message   string // User-supplied message, empty if not provided
 	Amount    int    // Any numerical amount tied to the message (bits, points, sub count)
+	Title     string // title of the Channel Point redemption made
 }
 
 func NewChatEvent() Event {
