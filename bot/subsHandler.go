@@ -1,25 +1,15 @@
 package bot
 
-import (
-	"fmt"
-	"time"
-)
-
-func (bot *Bot) RegisterSubsHandler(subMessgeFormat, giftSubMessageFormat string) {
+func (bot *Bot) RegisterSubsHandler(subsTemplate, giftSubsTemplate HandlerTemplate) {
 	bot.RegisterHandler(
 		NewHandler(func(evt Event) {
-			var msg string
-
 			if evt.IsSubEvent() {
-				msg = fmt.Sprintf(subMessgeFormat, evt.Amount, evt.Sender)
+				bot.SendMessage(subsTemplate.Parse(evt))
 			} else if evt.IsGiftSubEvent() {
-				msg = fmt.Sprintf(giftSubMessageFormat, evt.Sender, evt.Recipient)
+				bot.SendMessage(giftSubsTemplate.Parse(evt))
 			} else {
 				return // no messaging otherwise
 			}
-
-			time.Sleep(2 * time.Second)
-			bot.SendMessage(msg)
 		}),
 	)
 }

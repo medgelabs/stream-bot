@@ -1,33 +1,30 @@
-# Note for messageFormat:
-#   subs: months first (%d), then subscriber (%s)
-#   giftsubs: sender first (%s), then recipient (%s)
 medgelabs:
   channelId: 62232210
   greeter:
-    messageFormat: "Welcome to the lab, @%s!"
+    messageFormat: "Welcome to the lab, @{{.Sender}}!"
   channelPoints:
-    messageFormat: "Thanks for the research @%s!"
+    messageFormat: "Thanks for the research @{{.Sender}}!"
   raid:
-    messageFormat: "!so @%s"
+    messageFormat: "!so @{{.Sender}}"
   bits:
     messageFormat: "@{{.Sender}} gave {{.Amount}} hours of research to the Lab!"
   subs:
-    messageFormat: "Thank you for %d months in the Lab, @%s!"
+    messageFormat: "Thank you for {{.Amount}} months in the Lab, @{{.Sender}}!"
   giftsubs:
-    messageFormat: "@%s loaned their lab coat to @%s!"
+    messageFormat: "@{{.Sender}} loaned their lab coat to @{{.Recipient}}!"
 sorceryandsarcasm:
   channelId: 66490190
   greeter:
-    messageFormat: "@%s sorcer19Hype"
+    messageFormat: "@{{.Sender}} sorcer19Hype"
   raid:
-    messageFormat: "!so @%s"
+    messageFormat: "!so @{{.Sender}}"
   bits:
-    messageFormat: "Thank you for the bits @%s!"
+    messageFormat: "Thank you for the {{.Amount}} bits @{{.Sender}}!"
 spookyghostmachine:
   channelId: 119432399
   greeter:
-    messageFormat: "@%s spooky127Hype"
+    messageFormat: "@{{.Sender}} spooky127Hype"
   raid:
-    messageFormat: "!so @%s"
+    messageFormat: "!so @{{.Sender}}"
   bits:
-    messageFormat: "Thank you for the bittys @%s!"
+    messageFormat: "Thank you for the {{.Amount}} bittys @{{.Sender}}!"

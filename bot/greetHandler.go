@@ -7,10 +7,10 @@ import (
 	"time"
 )
 
-func (bot *Bot) RegisterGreeter(greeter greeter.Greeter) {
+func (bot *Bot) RegisterGreeter(greeter greeter.Greeter, messageTemplate HandlerTemplate) {
 	bot.RegisterHandler(
-		NewHandler(func(msg Event) {
-			username := msg.Sender
+		NewHandler(func(evt Event) {
+			username := evt.Sender
 			if strings.TrimSpace(username) == "" {
 				return
 			}
@@ -19,8 +19,7 @@ func (bot *Bot) RegisterGreeter(greeter greeter.Greeter) {
 				log.Printf("Never seen %s before", username)
 				time.Sleep(3 * time.Second)
 
-				msg := greeter.Greet(username)
-				bot.SendMessage(msg)
+				bot.SendMessage(messageTemplate.Parse(evt))
 				greeter.RecordGreeting(username)
 			}
 		}),
