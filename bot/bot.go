@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"errors"
 	"sync"
 )
 
@@ -10,6 +11,7 @@ type Bot struct {
 	consumers       []Handler
 	inboundPlugins  InboundPluginCollection
 	outboundPlugins OutboundPluginCollection
+	listening       bool
 }
 
 func New() Bot {
@@ -18,6 +20,7 @@ func New() Bot {
 		consumers:       make([]Handler, 0),
 		inboundPlugins:  make(InboundPluginCollection, 0),
 		outboundPlugins: make(OutboundPluginCollection, 0),
+		listening:       false,
 	}
 }
 
@@ -44,12 +47,17 @@ func (bot *Bot) SendMessage(message string) {
 }
 
 // RegisterHandler registers a function that will be called concurrently when a message is received
-func (bot *Bot) RegisterHandler(consumer Handler) {
-	bot.Mutex.Lock()
-	defer bot.Mutex.Unlock()
+func (bot *Bot) RegisterHandler(consumer Handler) error {
+	if bot.listening {
+		return errors.New("RegisterHandler called after bot already listening")
+	}
+
+	bot.Lock()
+	defer bot.Unlock()
 
 	consumers := append(bot.consumers, consumer)
 	bot.consumers = consumers
+	return nil
 }
 
 // Start listening for Events on the inbound channel and broadcast out
@@ -59,6 +67,8 @@ func (bot *Bot) listen() {
 	for _, consumer := range bot.consumers {
 		go consumer.Listen()
 	}
+
+	bot.listening = true
 
 	for {
 		select {
