@@ -41,8 +41,8 @@ The message sent is a Go fmt-style string stored in `config.yaml`. Different mes
 can be set for different channels:
 
 ```
-greeter:
-  CHANNEL_NAME:
+CHANNEL_NAME:
+  greeter:
     messageFormat: "Welcome @%s!"
 ```
 
@@ -52,34 +52,35 @@ The only variable injected is the username. Any other substitutions are ignored.
 
 Commands are currently set in code in the `bot/commandHandler.go` file.
 
-## TODO - Subscribers
+## Subscribers
 
 Subscribers can be sent a message on a new subscription. The message sent is
 found in `config.yaml` and can be set for different channels:
 
 ```
-subscribers:
-  CHANNEL_NAME:
+CHANNEL_NAME:
+  subs:
     messageFormat: "Thank you for the subscription, @%s!"
+  giftsubs:
+    messageFormat: "Thank you for gifting a sub to @%s, @%s!"
 ```
 
 The only variable injected is the username. Any other substitutions are ignored.
 
-TODO resub?
+## TODO - Bits
 
 ## TODO - Followers
 
-Followers API doesn't appear to be in IRC or PubSub. Needs investigation
-
-## TODO - Bits
+Followers API doesn't appear to be in IRC or PubSub.
+EventSub appears to have an event for it
 
 ## TODO - Emote Stats
 
 If enabled, and by setting the following `config.yaml` entry:
 
 ```
-emotes:
-  CHANNEL_NAME:
+CHANNEL_NAME:
+  emotes:
     prefix: medgel (YOU'RE EMOTE PREFIX HERE)
 ```
 
@@ -92,12 +93,6 @@ TODO - how are these accessed?
 ## TODO - QoL
 
 * Use Mustache for message strings for more options?
-* Simplify config.yaml to be channel-top to simplify for multiple features. i.e:
-    ```
-    CHANNEL_NAME:
-      greeter:
-        messageFormat: "..."
-    ```
 * Config without YAML file for more portability / quick-run?
 * Automated OAuth token
 
@@ -134,6 +129,14 @@ Gift Sub:
 ```
 map[badge-info:subscriber/6 badges:moderator/1,subscriber/6,bits/100000 color:#2E8B57 display-name:medgelabs emotes: flags: id:dcd7b498-c669-400c-8218-236570110258 login:medgelabs mod:1 msg-id:subgift msg-param-gift-months:1 msg-param-months:2 msg-param-origin-id:ORIGIN_ID msg-param-recipient-display-name:GIFT_RECIPIENT msg-param-recipient-id:GIFT_RECIPIENT_ID msg-param-recipient-user-name:GIFT_RECIPIENT msg-param-sender-count:38 msg-param-sub-plan:1000 msg-param-sub-plan-name:Channel\sSubscription\s(CHANNEL) room-id:119432399 subscriber:1 system-msg:medgelabs\sgifted\sa\sTier\s1\ssub\sto\sGIFT_RECIPIENT!\sThey\shave\sgiven\s38\sGift\sSubs\sin\sthe\schannel! tmi-sent-ts:1607514324648 user-id:SENDER_ID user-type:mod]
 <<< tmi.twitch.tv USERNOTICE #CHANNEL
+```
+
+Mass Gift Subs:
+
+Note: This message shows first, but also generates 5 individual Sub USERNOTICE messages where msg-id=subgift
+
+```
+map[badge-info:subscriber/3 badges:broadcaster/1,subscriber/0 color:#2E8B57 display-name:medgelabs emotes: flags: id:059d0e94-59d5-4ded-95d5-c5d6bb58ba0b login:medgelabs mod:0 msg-id:submysterygift msg-param-mass-gift-count:5 msg-param-origin-id:07\s23\s61\s03\sa4\sa1\s5a\sb0\s72\s4a\s72\s2d\s08\sdd\sda\s57\sc8\s24\sf6\s17 msg-param-sender-count:0 msg-param-sub-plan:1000 room-id:62232210 subscriber:1 system-msg:medgelabs\sis\sgifting\s5\sTier\s1\sSubs\sto\smedgelabs's\scommunity! tmi-sent-ts:1607696526324 user-id:62232210 user-type:] tmi.twitch.tv USERNOTICE #medgelabs
 ```
 
 Raid:

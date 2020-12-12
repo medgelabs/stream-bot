@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"medgebot/bot"
-	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -201,6 +200,16 @@ func (irc *Irc) read() {
 			evt.Sender = msg.Raider()
 			evt.Amount = msg.RaidSize()
 			irc.sendEvent(evt)
+		case msg.IsSubscriptionMessage():
+			evt := bot.NewSubEvent()
+			evt.Sender = msg.Subscriber()
+			evt.Amount = msg.SubMonths()
+			irc.sendEvent(evt)
+		case msg.IsGiftSubscriptionMessage():
+			evt := bot.NewGiftSubEvent()
+			evt.Sender = msg.GiftSender()
+			evt.Recipient = msg.GiftRecipient()
+			irc.sendEvent(evt)
 		default:
 			log.Printf("Unknown USERNOTICE: %s", msg.String())
 		}
@@ -208,49 +217,6 @@ func (irc *Irc) read() {
 	default:
 		log.Printf("<<< %s", msg.String())
 	}
-}
-
-// TODO should this be in message.go?
-// Attempt to parse a line from IRC to a Message
-func parseIrcLine(message string) Message {
-	// TrimSpace to get rid of /r/n
-	msgStr := strings.TrimSpace(string(message))
-	tokens := strings.Split(msgStr, " ")
-
-	// If tags are present, parse them out
-	msg := NewMessage()
-	cursor := 0
-
-	// Tags
-	if strings.HasPrefix(tokens[cursor], "@") {
-		tagsSlice := strings.Split(strings.TrimLeft(tokens[cursor], "@"), ";")
-		for _, tag := range tagsSlice {
-			parts := strings.Split(tag, "=")
-			msg.AddTag(parts[0], parts[1])
-		}
-		cursor++
-	}
-
-	// Prefix, therefore parse username
-	if strings.HasPrefix(tokens[cursor], ":") {
-		rawUsername := strings.Split(tokens[cursor], ":")[1]
-		username := strings.Split(rawUsername, "!")[0]
-		msg.User = username
-		cursor++
-	}
-
-	// Next cursor point should be Command
-	msg.Command = tokens[cursor]
-	cursor++
-
-	// Then, Channel
-	msg.Channel = strings.TrimPrefix(tokens[cursor], "#")
-	cursor++
-
-	// The rest should be the combined String beyond the ":"
-	combinedContents := strings.Join(tokens[cursor:], " ")
-	msg.Contents = strings.TrimPrefix(combinedContents, ":")
-	return msg
 }
 
 // Write a message to the IRC stream
