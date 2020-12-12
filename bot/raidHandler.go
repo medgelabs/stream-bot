@@ -11,7 +11,6 @@ func (bot *Bot) RegisterRaidHandler(messageFormat string) {
 			if evt.IsRaidEvent() {
 				time.Sleep(3 * time.Second)
 				bot.SendMessage(fmt.Sprintf(messageFormat, evt.Sender))
-				// log.Println(fmt.Sprintf(messageFormat, evt.Sender))
 			}
 		}),
 	)
