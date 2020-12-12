@@ -10,7 +10,7 @@ medgelabs:
   raid:
     messageFormat: "!so @%s"
   bits:
-    messageFormat: "Thank you for the research @%s!"
+    messageFormat: "@{{.Sender}} gave {{.Amount}} hours of research to the Lab!"
   subs:
     messageFormat: "Thank you for %d months in the Lab, @%s!"
   giftsubs:

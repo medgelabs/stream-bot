@@ -45,6 +45,8 @@ func (bot *Bot) RegisterInboundPlugin(plugin Inbound) error {
 
 // RegisterOutboundPlugin which receives messages FROM the bot
 func (bot *Bot) RegisterOutboundPlugin(plugin Outbound) error {
+	bot.Lock()
+	defer bot.Unlock()
 	bot.outboundPlugins = append(bot.outboundPlugins, plugin)
 	return nil
 }

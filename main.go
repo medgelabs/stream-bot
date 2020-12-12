@@ -11,6 +11,7 @@ import (
 	"medgebot/secret"
 	"medgebot/ws"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/spf13/viper"
@@ -162,7 +163,13 @@ func main() {
 	if enableBitsMessage || enableAll {
 		bitsKey := fmt.Sprintf("%s.bits.messageFormat", strings.Trim(channel, "#"))
 		bitsMessageFormat := viper.GetString(bitsKey)
-		chatBot.RegisterBitsHandler(bitsMessageFormat)
+
+		bitsTempl, err := template.New("bits").Parse(bitsMessageFormat)
+		if err != nil {
+			log.Fatalf("FATAL: invalid bits message in config - %v", err)
+		}
+
+		chatBot.RegisterBitsHandler(bitsTempl)
 	}
 
 	if enableSubsMessage || enableAll {
