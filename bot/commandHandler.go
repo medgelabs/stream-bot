@@ -10,7 +10,7 @@ func (bot *Bot) HandleCommands() {
 			if evt.IsChatEvent() {
 				contents := evt.Message
 
-				// Command processing
+				// Obligatory Hello, World
 				if strings.HasPrefix(contents, "!hello") {
 					bot.SendMessage("WORLD")
 				}
@@ -18,6 +18,12 @@ func (bot *Bot) HandleCommands() {
 				// Sorcery Shoutout
 				if strings.HasPrefix(contents, "!sorcery") {
 					bot.SendMessage("!so @SorceryAndSarcasm")
+				}
+
+				// TODO
+				// Fjoell Feature Request: ASCII Cthulu
+				if strings.HasPrefix(contents, "!cthulu") {
+					bot.SendMessage("Hey @medgelabs, GET ON THIS FEATURE!")
 				}
 			}
 		}),
