@@ -66,12 +66,19 @@ func parseIrcLine(message string) Message {
 		cursor++
 	}
 
-	// TODO should parse from tags, if available
-	// Prefix, therefore parse username
+	// Parse Username, if present
 	if strings.HasPrefix(tokens[cursor], ":") {
-		rawUsername := strings.Split(tokens[cursor], ":")[1]
-		username := strings.Split(rawUsername, "!")[0]
-		msg.User = username
+
+		nameTag := msg.Tag("display-name")
+		if nameTag != "" {
+			msg.User = nameTag
+		} else {
+			// Parse from the prefix before the command (not ideal)
+			rawUsername := strings.Split(tokens[cursor], ":")[1]
+			username := strings.Split(rawUsername, "!")[0]
+			msg.User = username
+		}
+
 		cursor++
 	}
 
