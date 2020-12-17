@@ -50,3 +50,24 @@ func (bot *Bot) RegisterOutboundPlugin(plugin Outbound) error {
 	bot.outboundPlugins = append(bot.outboundPlugins, plugin)
 	return nil
 }
+
+// SimplePlugin is a simple Pluggable implementation that does nothing but shuttle events.
+// This is purely for testing
+type SimplePlugin struct {
+	Events   chan Event
+	outbound chan<- Event
+}
+
+func NewSimplePlugin() *SimplePlugin {
+	return &SimplePlugin{
+		Events: make(chan Event),
+	}
+}
+
+func (c *SimplePlugin) GetChannel() chan<- Event {
+	return c.Events
+}
+
+func (c *SimplePlugin) SetChannel(outbound chan<- Event) {
+	c.outbound = outbound
+}

@@ -6,7 +6,7 @@ import "testing"
 func TestBitsHandler(t *testing.T) {
 	// Initialize Bot
 	bot := New()
-	checker := NewChecker()
+	checker := NewSimplePlugin()
 	bot.RegisterOutboundPlugin(checker)
 
 	// Initialize Bits Handler
