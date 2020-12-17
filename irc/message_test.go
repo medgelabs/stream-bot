@@ -2,7 +2,6 @@ package irc
 
 import (
 	"reflect"
-	"strconv"
 	"testing"
 )
 
@@ -10,12 +9,13 @@ const (
 	// User that should be used in below IRC messages
 	assistant = "assistant1"
 
-	CHAT_MSG    = "@display-name=assistant1;subscriber=1 :assistant1!assistant1@assistant1.tmi.twitch.tv PRIVMSG #medgelabs :Yes, we can test"
-	BITS_MSG    = "@bits=1;display-name=assistant1 :assistant1!assistant1@assistant1.tmi.twitch.tv PRIVMSG #medgelabs :Cheer100"
-	RAID_MSG    = `@display-name=assistant1;msg-id=raid;msg-param-displayName=assistant1;msg-param-viewerCount=1 :tmi.twitch.tv USERNOTICE #medgelabs`
-	SUB_MSG     = `@display-name=assistant1;msg-id=sub;msg-param-cumulative-months=1;msg-param-sub-plan=Tier1;msg-param-sub-plan-name=Tier1 :tmi.twitch.tv USERNOTICE #medgelabs :Moar testing!`
-	RESUB_MSG   = `@display-name=assistant1;msg-id=resub;msg-param-cumulative-months=2;msg-param-sub-plan=Tier1;msg-param-sub-plan-name=Tier1 :tmi.twitch.tv USERNOTICE #medgelabs :Moar testing!`
-	GIFTSUB_MSG = `@display-name=ReallyFrank;msg-id=subgift;msg-param-gift-months=1;msg-param-recipient-display-name=Fjoell;msg-param-recipient-user-name=Fjoell;msg-param-sub-plan=1000;msg-param-sub-plan-name=Tier1 :tmi.twitch.tv USERNOTICE #medgelabs :`
+	CHAT_MSG_BASE = ":assistant1!assistant1@assistant1.tmi.twitch.tv PRIVMSG #medgelabs :Yes, we can test"
+	CHAT_MSG_TAGS = "@display-name=Assistant1;subscriber=1 " + CHAT_MSG_BASE
+	BITS_MSG      = "@bits=1;display-name=assistant1 :assistant1!assistant1@assistant1.tmi.twitch.tv PRIVMSG #medgelabs :Cheer100"
+	RAID_MSG      = `@display-name=assistant1;msg-id=raid;msg-param-displayName=assistant1;msg-param-viewerCount=1 :tmi.twitch.tv USERNOTICE #medgelabs`
+	SUB_MSG       = `@display-name=assistant1;msg-id=sub;msg-param-cumulative-months=1;msg-param-sub-plan=Tier1;msg-param-sub-plan-name=Tier1 :tmi.twitch.tv USERNOTICE #medgelabs :Moar testing!`
+	RESUB_MSG     = `@display-name=assistant1;msg-id=resub;msg-param-cumulative-months=2;msg-param-sub-plan=Tier1;msg-param-sub-plan-name=Tier1 :tmi.twitch.tv USERNOTICE #medgelabs :Moar testing!`
+	GIFTSUB_MSG   = `@display-name=ReallyFrank;msg-id=subgift;msg-param-gift-months=1;msg-param-recipient-display-name=Fjoell;msg-param-recipient-user-name=Fjoell;msg-param-sub-plan=1000;msg-param-sub-plan-name=Tier1 :tmi.twitch.tv USERNOTICE #medgelabs :`
 )
 
 func TestParseIrcLine(t *testing.T) {
@@ -24,6 +24,24 @@ func TestParseIrcLine(t *testing.T) {
 		input       string
 		expected    Message
 	}{
+		{description: "Chat Message with no display-name tag", input: CHAT_MSG_BASE, expected: Message{
+			Tags:     map[string]string{},
+			User:     "assistant1",
+			Command:  "PRIVMSG",
+			Channel:  "medgelabs",
+			Contents: "Yes, we can test",
+		}},
+		{description: "Chat Message with display-name tag", input: CHAT_MSG_TAGS, expected: Message{
+			Tags: map[string]string{
+				"display-name": "Assistant1",
+				"subscriber":   "1",
+			},
+			User:     "Assistant1", // We should get the tag version, not the Command prefix version (lowercase)
+			Command:  "PRIVMSG",
+			Channel:  "medgelabs",
+			Contents: "Yes, we can test",
+		}},
+
 		{description: "Bits Message", input: BITS_MSG, expected: Message{
 			Tags: map[string]string{
 				"display-name": assistant,
@@ -44,39 +62,6 @@ func TestParseIrcLine(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestChatMessageParse(t *testing.T) {
-	parsed := parseIrcLine(CHAT_MSG)
-
-	if parsed.Command != "PRIVMSG" {
-		t.Fatalf("Expected PRIVMSG as Command but got %s", parsed.Command)
-	}
-
-	if parsed.User != assistant {
-		t.Fatalf("Expected assistant1 as User but got %s", parsed.User)
-	}
-
-	if parsed.Channel != "medgelabs" {
-		t.Fatalf("Expected medgelabs as Channel but got %s", parsed.Channel)
-	}
-
-	if parsed.Contents != "Yes, we can test" {
-		t.Fatalf("Expected 'Yes, we can test' as Contents but got %s", parsed.Contents)
-	}
-
-	// Check for a couple tags to ensure parsing happened properly
-	name := parsed.Tag("display-name")
-	if name != assistant {
-		t.Fatalf("Expected assistant1 as display-name Tag but got %s", name)
-	}
-
-	subscriber := parsed.Tag("subscriber")
-	subInt, err := strconv.Atoi(subscriber)
-	if err != nil || subInt != 1 {
-		t.Fatalf("Expected 1 subscriber Tag but got %s", subscriber)
-	}
-
 }
 
 func TestRaidMessageParsing(t *testing.T) {

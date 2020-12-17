@@ -57,7 +57,10 @@ func (irc *Irc) Start(config Config) error {
 	// Read loop for receiving messages from IRC
 	go func() {
 		for {
-			irc.read()
+			if err := irc.read(); err != nil {
+				log.Printf("ERROR: irc read - %v", err)
+				break
+			}
 		}
 	}()
 
@@ -154,17 +157,16 @@ func (irc *Irc) sendNick(nick string) error {
 }
 
 // Read reads from the IRC stream, one line at a time
-func (irc *Irc) read() {
+func (irc *Irc) read() error {
 	buff := make([]byte, MAX_MSG_SIZE)
 	len, err := irc.conn.Read(buff)
 	if err != nil {
-		log.Printf("ERROR: read irc - %v", err)
-		return
+		return errors.Wrap(err, "ERROR: read irc")
 	}
 
 	if len == 0 {
 		log.Println("Empty message buffer")
-		return
+		return errors.New("Empty message buffer")
 	}
 
 	msg := parseIrcLine(string(buff))
@@ -172,7 +174,7 @@ func (irc *Irc) read() {
 	// Intercept for PING/PONG
 	if msg.Command == "PING" {
 		irc.sendPong(msg.Contents)
-		return
+		return nil
 	}
 
 	// Now, convert to bot.Event
@@ -217,6 +219,8 @@ func (irc *Irc) read() {
 	default:
 		log.Printf("<<< %s", msg.String())
 	}
+
+	return nil
 }
 
 // Write a message to the IRC stream

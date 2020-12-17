@@ -24,7 +24,7 @@ func TestBitsHandler(t *testing.T) {
 	evt.Amount = 100
 	bot.events <- evt
 
-	response := <-checker.events
+	response := <-checker.Events
 	if response.Message != "Thanks for the 100 bits ReallyFrank" {
 		t.Fatalf("Got invalid bits response: %+v", response)
 	}
@@ -34,7 +34,7 @@ func TestBitsHandler(t *testing.T) {
 	bot.events <- evt
 
 	select {
-	case resp := <-checker.events:
+	case resp := <-checker.Events:
 		t.Fatalf("Received message from BitsHandler for invalid message - %+v", resp)
 	default:
 		// If we don't receive a response, the Bot didn't erroneously parse the wrong message
