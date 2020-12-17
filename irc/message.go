@@ -86,6 +86,7 @@ func parseIrcLine(message string) Message {
 	msg.Command = tokens[cursor]
 	cursor++
 
+	// TODO this caused a panic on some kind of message
 	// Then, Channel
 	msg.Channel = strings.TrimPrefix(tokens[cursor], "#")
 	cursor++
