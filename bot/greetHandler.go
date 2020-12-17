@@ -10,8 +10,9 @@ import (
 func (bot *Bot) RegisterGreeter(greeter greeter.Greeter, messageTemplate HandlerTemplate) {
 	bot.RegisterHandler(
 		NewHandler(func(evt Event) {
-			username := evt.Sender
+			username := strings.ToLower(evt.Sender)
 			if strings.TrimSpace(username) == "" {
+				log.Printf("Empty username for: %+v", evt)
 				return
 			}
 

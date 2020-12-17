@@ -17,9 +17,8 @@ sorceryandsarcasm:
   greeter:
     messageFormat: "@{{.Sender}} sorcer19Hype"
   raid:
+    delaySeconds: 2
     messageFormat: "!so @{{.Sender}}"
-  bits:
-    messageFormat: "Thank you for the {{.Amount}} bits @{{.Sender}}!"
 spookyghostmachine:
   channelId: 119432399
   greeter:

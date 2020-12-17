@@ -138,8 +138,6 @@ func main() {
 		ledger.Add("soundalerts")
 		ledger.Add(nick)
 		ledger.Add(strings.TrimPrefix(channel, "#")) // Prevent greeting the broadcaster
-		ledger.Add(nick + ".tmi.twitch.tv")
-		ledger.Add(nick + "@tmi.twitch.tv")
 
 		// Greeter config
 		greetKey := fmt.Sprintf("%s.greeter.messageFormat", strings.Trim(channel, "#"))
@@ -157,12 +155,16 @@ func main() {
 		raidKey := fmt.Sprintf("%s.raid.messageFormat", strings.Trim(channel, "#"))
 		raidMessageFormat := viper.GetString(raidKey)
 
+		viper.SetDefault("%s.raid.delaySeconds", 0)
+		raidDelayKey := fmt.Sprintf("%s.raid.delaySeconds", strings.Trim(channel, "#"))
+		raidDelay := viper.GetInt(raidDelayKey)
+
 		raidTempl, err := template.New("raids").Parse(raidMessageFormat)
 		if err != nil {
 			log.Fatalf("FATAL: invalid raid message in config - %v", err)
 		}
 		chatBot.RegisterRaidHandler(
-			bot.NewHandlerTemplate(raidTempl))
+			bot.NewHandlerTemplate(raidTempl), raidDelay)
 	}
 
 	if enableBitsMessage || enableAll {
