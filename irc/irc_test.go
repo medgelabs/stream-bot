@@ -2,8 +2,10 @@ package irc
 
 import (
 	"bytes"
+	"medgebot/bot"
 	"strings"
 	"testing"
+	"time"
 )
 
 type TestConnection struct {
@@ -13,6 +15,10 @@ type TestConnection struct {
 // Helper method for checking if the given string was sent to the TestConnection
 func (t *TestConnection) Received(str string) bool {
 	return strings.Contains(t.String(), str)
+}
+
+func (t *TestConnection) Clear() {
+	t.Reset()
 }
 
 func (t *TestConnection) Close() error {
@@ -46,6 +52,34 @@ func TestStart(t *testing.T) {
 	}
 }
 
-func TestRead(t *testing.T) {}
+func TestMessageReceivedFromServer(t *testing.T) {
+	conn := &TestConnection{}
+	config := Config{
+		Nick:     "medgelabs",
+		Password: "oauth:secret",
+		Channel:  "#medgelabs",
+	}
+	irc := NewClient(conn)
 
-func TestWrite(t *testing.T) {}
+	testBot := bot.NewSimplePlugin()
+	irc.SetChannel(testBot.GetChannel())
+
+	irc.Start(config)
+	conn.Clear()
+
+	conn.WriteString(CHAT_MSG_TAGS)
+
+	// Wait for message on
+	select {
+	case evt := <-testBot.Events:
+		if evt.Type != bot.CHAT_MSG {
+			t.Fatalf("Did not receive a Chat message. Got %+v", evt)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatalf("Failed to receive expected message")
+	}
+}
+
+func TestSendMessageToServer(t *testing.T) {
+	t.Fatalf("Not Implemented")
+}
