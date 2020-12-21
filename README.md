@@ -3,8 +3,10 @@
 Twitch ChatBot built on stream! Utilizes Twitch IRC and Twitch PubSub APIs to
 interact with Twitch Chat.
 
+* Subscriptions, bit donations, and raid notifications are extracted from IRC messages
+* Commands are also extracted from IRC messages
 * All messages sent _FROM_ the bot _TO_ chat are done via IRC PRIVMSG commands
-* PubSub is used for Subscriptions, Point Redemptions, and Bits since IRC does not send these
+* PubSub is used for Channel Point Redemptions at this time
 
 ## Build & Run
 
@@ -18,19 +20,43 @@ binary with the `-h` flag to see available options.
 
 ## Secrets
 
-Secrets required by the app:
-
-* Twitch OAuth token
-
-A `Secret Store` provides these to the app (`/secrets` package). Currently supported options
+A `Secret Store` provides secrets to the app (`/secrets` package). Currently supported options
 are:
 
 * Hashicorp Vault (available via `docker-compose up vault`)
-  * Secret is expected under `secrets/twitchToken`
-* Environment variable: `TWITCH_TOKEN`
+  * Secrets expected: `secrets/twitchToken`
+* Environment variables: `TWITCH_TOKEN`
 
-https://twitch.tv/medgelabs
+## config.yaml
 
+Configuration for the Bot can be defined in a `config.yaml` file found in the same directory as the binary /
+root of the project. Config is by channel, like so:
+
+```
+CHANNEL_NAME:
+  feature:
+    config: ....
+```
+
+Each feature's configuration can be found in the following sections.
+
+### MessageFormat and Templates
+
+The `text/template` package is used for any messageFormat config keys. These configs are used
+to define what shape of message is sent to chat on an event. For example: what is sent
+to a user when they subscribe if the subscription thanks feature is turned on.
+
+The `Event` struct in `bot/event.go` is what is used to bind to the template. As such, exported
+fields can be used in config.yaml to form a messageFormat string. For example:
+
+```
+medgelabs:
+  subs:
+    messageFormat: "{{.Sender}} renewed their Lab Assistant role!"
+```
+
+`{{.Sender}}` is a placeholder that will be filled in with the user that just subscribed. Take
+a look at the `Event` struct to see all available options.
 
 ## Greeter
 
@@ -43,12 +69,12 @@ can be set for different channels:
 ```
 CHANNEL_NAME:
   greeter:
-    messageFormat: "Welcome @%s!"
+    messageFormat: "Welcome @{{.Sender}}!"
 ```
 
 The only variable injected is the username. Any other substitutions are ignored.
 
-## Commands
+## Commands - TODO
 
 Commands are currently set in code in the `bot/commandHandler.go` file.
 
@@ -60,14 +86,21 @@ found in `config.yaml` and can be set for different channels:
 ```
 CHANNEL_NAME:
   subs:
-    messageFormat: "Thank you for the subscription, @%s!"
+    messageFormat: "Thank you for the subscription, @{{.Sender}}!"
   giftsubs:
-    messageFormat: "Thank you for gifting a sub to @%s, @%s!"
+    messageFormat: "Thank you for gifting a sub to @{{.Recipient}}, @{{.Sender}}!"
 ```
 
-The only variable injected is the username. Any other substitutions are ignored.
+## Bits
 
-## TODO - Bits
+Bits Donations can be automatically thanked on donation. The message sent is
+found in `config.yaml` and can be set for different channels:
+
+```
+CHANNEL_NAME:
+  bits:
+    messageFormat: "Thank you for the {{.Amount}} bits, @{{.Sender}}!"
+```
 
 ## TODO - Followers
 
@@ -81,7 +114,7 @@ If enabled, and by setting the following `config.yaml` entry:
 ```
 CHANNEL_NAME:
   emotes:
-    prefix: medgel (YOU'RE EMOTE PREFIX HERE)
+    prefix: (YOUR EMOTE PREFIX HERE)
 ```
 
 The bot will analyze messages for usages of emotes with the given prefix. A single
@@ -92,7 +125,6 @@ TODO - how are these accessed?
 
 ## TODO - QoL
 
-* Use Mustache for message strings for more options?
 * Config without YAML file for more portability / quick-run?
 * Automated OAuth token
 
