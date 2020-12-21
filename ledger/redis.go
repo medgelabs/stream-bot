@@ -9,10 +9,10 @@ import (
 
 type RedisLedger struct {
 	pool                *radix.Pool
-	expireTimeInSeconds int
+	expireTimeInSeconds int64
 }
 
-func NewRedisLedger(host, port string) (RedisLedger, error) {
+func NewRedisLedger(host, port string, keyExpirationTime int64) (RedisLedger, error) {
 	pool, err := radix.NewPool("tcp", fmt.Sprintf("%s:%s", host, port), 10)
 	if err != nil {
 		return RedisLedger{}, err
@@ -20,7 +20,7 @@ func NewRedisLedger(host, port string) (RedisLedger, error) {
 
 	return RedisLedger{
 		pool:                pool,
-		expireTimeInSeconds: 60 * 60 * 12, // 12 hours
+		expireTimeInSeconds: keyExpirationTime,
 	}, nil
 }
 

@@ -125,13 +125,14 @@ func main() {
 
 	if enableGreeter || enableAll {
 		// Ledger for the auto greeter
-		ledger, err := ledger.NewLedger(ledgerType)
+		// TODO get from config
+		var expirationTime int64 = 1000 * 60 * 60 * 12 // 12 hours
+		ledger, err := ledger.NewLedger(ledgerType, expirationTime)
 		if err != nil {
 			log.Fatalf("FATAL: create ledger - %v", err)
 		}
 
 		// pre-seed names we don't want greeted
-		ledger.Add("tmi.twitch.tv")
 		ledger.Add("streamlabs")
 		ledger.Add("nightbot")
 		ledger.Add("ranaebot")
