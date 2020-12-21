@@ -14,9 +14,8 @@ medgelabs:
     messageFormat: "@{{.Sender}} loaned their lab coat to @{{.Recipient}}!"
 sorceryandsarcasm:
   channelId: 66490190
-  greeter:
-    messageFormat: "@{{.Sender}} sorcer19Hype"
   raid:
+    enabled: true
     delaySeconds: 2
     messageFormat: "!so @{{.Sender}}"
 spookyghostmachine:
@@ -25,5 +24,3 @@ spookyghostmachine:
     messageFormat: "@{{.Sender}} spooky127Hype"
   raid:
     messageFormat: "!so @{{.Sender}}"
-  bits:
-    messageFormat: "Thank you for the {{.Amount}} bittys @{{.Sender}}!"

@@ -12,7 +12,7 @@ type TestConnection struct {
 
 // Helper method for checking if the given string was sent to the TestConnection
 func (t *TestConnection) Received(str string) bool {
-	return !strings.Contains(t.String(), str)
+	return strings.Contains(t.String(), str)
 }
 
 func (t *TestConnection) Close() error {
@@ -46,9 +46,6 @@ func TestStart(t *testing.T) {
 	}
 }
 
-func TestRead(t *testing.T) {
-	conn := &TestConnection{}
-
-}
+func TestRead(t *testing.T) {}
 
 func TestWrite(t *testing.T) {}
