@@ -1,6 +1,9 @@
 package bot
 
-import "testing"
+import (
+	"medgebot/bot/bottest"
+	"testing"
+)
 
 type TestChatClient struct {
 	events chan Event
@@ -17,7 +20,7 @@ func (c TestChatClient) Channel() chan<- Event {
 	return c.events
 }
 
-// Integration Test for Bits handler through the Bot
+// Bits handler through the Bot
 func TestBitsHandler(t *testing.T) {
 	// Initialize Bot
 	bot := New()
@@ -25,7 +28,7 @@ func TestBitsHandler(t *testing.T) {
 	bot.SetChatClient(checker)
 
 	// Initialize Bits Handler
-	tmpl := makeTemplate("testBits", "Thanks for the {{.Amount}} bits {{.Sender}}")
+	tmpl := bottest.MakeTemplate("testBits", "Thanks for the {{.Amount}} bits {{.Sender}}")
 	bot.RegisterBitsHandler(HandlerTemplate{
 		templ: tmpl,
 	})

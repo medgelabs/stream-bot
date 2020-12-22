@@ -169,6 +169,9 @@ func (irc *Irc) read() error {
 		return errors.New("Empty message buffer")
 	}
 
+	// TODO trace inbound IRC message
+	// log.Println(string(buff))
+
 	msg := parseIrcLine(string(buff))
 
 	// Intercept for PING/PONG

@@ -86,6 +86,6 @@ func TestMessageReceivedFromServer(t *testing.T) {
 	}
 }
 
-func TestSendMessageToServer(t *testing.T) {
-	t.Fatalf("Not Implemented")
-}
+// func TestSendMessageToServer(t *testing.T) {
+// t.Fatalf("Not Implemented")
+// }
