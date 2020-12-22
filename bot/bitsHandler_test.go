@@ -2,12 +2,27 @@ package bot
 
 import "testing"
 
+type TestChatClient struct {
+	events chan Event
+}
+
+func NewTestChatClient() TestChatClient {
+	return TestChatClient{
+		events: make(chan Event),
+	}
+}
+
+// bot.ChatClient
+func (c TestChatClient) Channel() chan<- Event {
+	return c.events
+}
+
 // Integration Test for Bits handler through the Bot
 func TestBitsHandler(t *testing.T) {
 	// Initialize Bot
 	bot := New()
-	checker := NewSimplePlugin()
-	bot.RegisterOutboundPlugin(checker)
+	checker := NewTestChatClient()
+	bot.SetChatClient(checker)
 
 	// Initialize Bits Handler
 	tmpl := makeTemplate("testBits", "Thanks for the {{.Amount}} bits {{.Sender}}")
@@ -24,7 +39,7 @@ func TestBitsHandler(t *testing.T) {
 	evt.Amount = 100
 	bot.events <- evt
 
-	response := <-checker.Events
+	response := <-checker.events
 	if response.Message != "Thanks for the 100 bits ReallyFrank" {
 		t.Fatalf("Got invalid bits response: %+v", response)
 	}
@@ -34,7 +49,7 @@ func TestBitsHandler(t *testing.T) {
 	bot.events <- evt
 
 	select {
-	case resp := <-checker.Events:
+	case resp := <-checker.events:
 		t.Fatalf("Received message from BitsHandler for invalid message - %+v", resp)
 	default:
 		// If we don't receive a response, the Bot didn't erroneously parse the wrong message

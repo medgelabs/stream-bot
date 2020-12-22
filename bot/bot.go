@@ -8,27 +8,63 @@ import (
 
 type Bot struct {
 	sync.Mutex
-	events          chan Event
-	consumers       []Handler
-	inboundPlugins  InboundPluginCollection
-	outboundPlugins OutboundPluginCollection
-	listening       bool
+
+	// Handlers of bot.Event messages
+	consumers []Handler
+
+	// Producers of data from external systems
+	clients []Client
+
+	// Where the Bot sends messages to get to Chat
+	chatClient ChatClient
+
+	// events
+	events    chan Event
+	listening bool
+}
+
+// Client represents data being sent TO the Bot
+type Client interface {
+	SetDestination(chan<- Event)
+}
+
+// ChatClient is a connector to Chat that the Bot sends messages to
+type ChatClient interface {
+	Channel() chan<- Event
 }
 
 func New() Bot {
 	return Bot{
-		events:          make(chan Event, 0),
-		consumers:       make([]Handler, 0),
-		inboundPlugins:  make(InboundPluginCollection, 0),
-		outboundPlugins: make(OutboundPluginCollection, 0),
-		listening:       false,
+		consumers: make([]Handler, 0),
+		clients:   make([]Client, 0),
+		events:    make(chan Event, 0),
+		listening: false,
 	}
 }
 
+// RegisterClient links a Client that will send data TO the Bot.
+// This method also set's the Client's Destination channel
+func (bot *Bot) RegisterClient(client Client) {
+	bot.Lock()
+	defer bot.Unlock()
+
+	client.SetDestination(bot.events)
+	bot.clients = append(bot.clients, client)
+}
+
+// SetChatClient register's the client that will allow the Bot to send
+// messages to Chat
+func (bot *Bot) SetChatClient(client ChatClient) {
+	bot.Lock()
+	defer bot.Unlock()
+
+	bot.chatClient = client
+}
+
+// sendEvent sends a Bot event to Write-enabled clients
 func (bot *Bot) sendEvent(evt Event) {
-	for _, plugin := range bot.outboundPlugins {
-		plugin.GetChannel() <- evt
-	}
+	// TODO trace outbound
+	bot.chatClient.Channel() <- evt
 }
 
 // Start the bot and listen for incoming events

@@ -238,12 +238,13 @@ func (irc *Irc) write(message Message) error {
 	return nil
 }
 
-// Pluggable
-func (irc *Irc) GetChannel() chan<- bot.Event {
+// bot.ChatClient
+func (irc *Irc) Channel() chan<- bot.Event {
 	return irc.inboundEvents
 }
 
-func (irc *Irc) SetChannel(outbound chan<- bot.Event) {
+// bot.Client
+func (irc *Irc) SetDestination(outbound chan<- bot.Event) {
 	irc.outboundEvents = outbound
 }
 

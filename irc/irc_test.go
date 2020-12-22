@@ -4,20 +4,26 @@ import (
 	"bytes"
 	"medgebot/bot"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
 
 type TestConnection struct {
 	bytes.Buffer
+	sync.Mutex
 }
 
 // Helper method for checking if the given string was sent to the TestConnection
 func (t *TestConnection) Received(str string) bool {
+	t.Lock()
+	defer t.Unlock()
 	return strings.Contains(t.String(), str)
 }
 
 func (t *TestConnection) Clear() {
+	t.Lock()
+	defer t.Unlock()
 	t.Reset()
 }
 
@@ -61,8 +67,8 @@ func TestMessageReceivedFromServer(t *testing.T) {
 	}
 	irc := NewClient(conn)
 
-	testBot := bot.NewSimplePlugin()
-	irc.SetChannel(testBot.GetChannel())
+	testBot := make(chan bot.Event)
+	irc.SetDestination(testBot)
 
 	irc.Start(config)
 	conn.Clear()
@@ -71,7 +77,7 @@ func TestMessageReceivedFromServer(t *testing.T) {
 
 	// Wait for message on
 	select {
-	case evt := <-testBot.Events:
+	case evt := <-testBot:
 		if evt.Type != bot.CHAT_MSG {
 			t.Fatalf("Did not receive a Chat message. Got %+v", evt)
 		}

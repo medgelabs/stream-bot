@@ -75,7 +75,7 @@ func main() {
 		log.Fatalf("FATAL: Create secret store - %v", err)
 	}
 
-	password, err := store.GetTwitchToken()
+	password, err := store.TwitchToken()
 	if err != nil {
 		log.Fatalf("FATAL: Get Twitch Token from store - %v", err)
 	}
@@ -97,9 +97,9 @@ func main() {
 		log.Fatalf(err.Error())
 	}
 
-	if err := chatBot.RegisterPlugin(irc); err != nil {
-		log.Fatalf("FATAL: failed to register plugin: %v", err)
-	}
+	// IRC is both a Client and a ChatClient
+	chatBot.RegisterClient(irc)
+	chatBot.SetChatClient(irc)
 
 	// PubSub
 	// channelIdKey := fmt.Sprintf("%s.channelId", strings.Trim(channel, "#"))
