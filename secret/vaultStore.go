@@ -32,7 +32,7 @@ func (s *VaultStore) Connect(url, token string) error {
 	return nil
 }
 
-func (s VaultStore) GetTwitchToken() (string, error) {
+func (s VaultStore) TwitchToken() (string, error) {
 	secret, err := s.client.Logical().Read(s.secretPath)
 	if err != nil {
 		return "", fmt.Errorf("ERROR: fetch Twitch Token from Store - %v", err)

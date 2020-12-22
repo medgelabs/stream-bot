@@ -19,7 +19,7 @@ func NewEnvStore() EnvStore {
 	}
 }
 
-func (s EnvStore) GetTwitchToken() (string, error) {
+func (s EnvStore) TwitchToken() (string, error) {
 	if s.twitchToken == "" {
 		return "", fmt.Errorf("ERROR: twitch token not in env")
 	}
