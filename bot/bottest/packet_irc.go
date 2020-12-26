@@ -1,8 +1,20 @@
 package bottest
 
 import (
+	"strconv"
 	"strings"
 )
+
+func MakeRaidMessage(raider string, raidSize int, channel string) string {
+	tags := make(map[string]string)
+
+	tags["msg-id"] = "raid"
+	tags["display-name"] = raider
+	tags["msg-param-displayName"] = raider
+	tags["msg-param-viewerCount"] = strconv.Itoa(raidSize)
+
+	return MakeIrcMessage("", "", "USERNOTICE", channel, tags)
+}
 
 // Helper for creating an IRC message to be used in Integration tests
 func MakeIrcMessage(body, sender, command, channel string, tags map[string]string) string {
@@ -16,7 +28,11 @@ func MakeIrcMessage(body, sender, command, channel string, tags map[string]strin
 	sb.WriteString(" :")
 
 	// Username
-	sb.WriteString(sender + "!" + sender + "@" + sender + ".tmi.twitch.tv")
+	if sender != "" {
+		sb.WriteString(sender + "!" + sender + "@" + sender + ".tmi.twitch.tv")
+	} else {
+		sb.WriteString("tmi.twitch.tv")
+	}
 	sb.WriteString(" ")
 
 	// Command
@@ -25,10 +41,12 @@ func MakeIrcMessage(body, sender, command, channel string, tags map[string]strin
 
 	// Channel
 	sb.WriteString("#" + channel)
-	sb.WriteString(" :")
 
 	// Message
-	sb.WriteString(body)
+	if body != "" {
+		sb.WriteString(" :")
+		sb.WriteString(body)
+	}
 
 	return sb.String()
 }
