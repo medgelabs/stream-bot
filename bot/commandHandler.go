@@ -20,10 +20,22 @@ func (bot *Bot) HandleCommands() {
 					bot.SendMessage("!so @SorceryAndSarcasm")
 				}
 
-				// TODO
 				// Fjoell Feature Request: ASCII Cthulu
-				if strings.HasPrefix(contents, "!cthulu") {
-					bot.SendMessage("Hey @medgelabs, GET ON THIS FEATURE!")
+				if strings.HasPrefix(contents, "!cthulhu") {
+					msg := `⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+							⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠉⠉⠉⠙⢿⣷⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+							⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠏⠀⠀⠀⠀⠀⠀⠀⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+							⣿⣿⣿⣿⣿⠿⠿⢿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿
+							⣿⣿⣿⡿⠋⣴⣴⣸⢿⠋⠈⠂⠀⠀⠀⠀⠀⠀⠀⠀⠈⢻⣿⣿⣿⣿⣿⣿⣿⣿
+							⣿⣿⣿⡇⠀⣾⣿⣿⣾⣇⠀⠠⠄⠀⢀⢀⠀⠀⢠⢀⠀⣼⣿⣏⣀⡈⢻⣿⣿⣿
+							⣿⣿⣿⣷⡀⠈⠙⠛⠙⠋⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠘⠛⠿⠿⠟⠃⢸⣿⣿⣿
+							⣿⣿⣿⣿⣿⣶⡄⠂⡒⣂⡨⠃⠀⠀⠈⠈⠀⠀⠈⢐⠒⠀⠠⠤⠤⡞⣿⣿⣿⣿
+							⣿⣿⣿⣿⣿⣿⠀⠖⠀⠀⢀⡠⠊⠀⢠⣶⠀⠈⠢⣀⡀⠀⠑⠲⠀⣏⣿⣿⣿⣿
+							⣿⣿⣿⣿⣿⣿⣶⣦⣀⡁⠜⢁⢴⠀⢀⣷⣧⡀⠱⡈⠂⠓⠀⢰⣾⣿⣿⣿⣿⣿
+							⣿⣿⣿⣿⣿⣿⣿⣿⣿⡁⠈⠕⠘⠀⠘⠿⠿⠇⢠⠿⠀⣶⣾⣿⣿⣿⣿⣿⣿⣿
+							⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣄⣁⣀⣆⡐⣶⣶⣧⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿
+							⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿`
+					bot.SendMessage(strings.TrimSpace(msg))
 				}
 			}
 		}),
