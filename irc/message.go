@@ -48,6 +48,11 @@ func (msg *Message) AddTag(tag, value string) {
 
 // Attempt to parse a line from IRC to a Message
 func parseIrcLine(message string) Message {
+	if strings.TrimSpace(message) == "" {
+		log.Println("WARN: attempt to parse empty IRC line")
+		return Message{}
+	}
+
 	// TrimSpace to get rid of /r/n
 	msgStr := strings.TrimSpace(string(message))
 	tokens := strings.Split(msgStr, " ")
@@ -61,6 +66,12 @@ func parseIrcLine(message string) Message {
 		tagsSlice := strings.Split(strings.TrimLeft(tokens[cursor], "@"), ";")
 		for _, tag := range tagsSlice {
 			parts := strings.Split(tag, "=")
+
+			// Random chance of empty tag? No panicking
+			if len(parts) < 2 {
+				continue
+			}
+
 			msg.AddTag(parts[0], parts[1])
 		}
 		cursor++

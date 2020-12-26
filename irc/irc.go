@@ -169,8 +169,8 @@ func (irc *Irc) read() error {
 		return errors.New("Empty message buffer")
 	}
 
-	// TODO trace inbound IRC message
-	// log.Println(string(buff))
+	// trace inbound IRC message
+	log.Println(string(buff))
 
 	msg := parseIrcLine(string(buff))
 
@@ -220,7 +220,7 @@ func (irc *Irc) read() error {
 		}
 
 	default:
-		log.Printf("<<< %s", msg.String())
+		// log.Printf("<<< %s", msg.String())
 	}
 
 	return nil
