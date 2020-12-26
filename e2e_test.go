@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"medgebot/bot"
 	"medgebot/bot/bottest"
 	"medgebot/irc"
@@ -14,13 +15,13 @@ const (
 
 func TestRaids(t *testing.T) {
 	ws := bottest.NewTestWebsocket()
+
 	ircClient := irc.NewClient(ws)
 	ircConf := irc.Config{
 		Nick:     USER,
 		Password: "oauth:superSpookyGhostMachineTestSecret",
-		Channel:  CHANNEL,
+		Channel:  "#" + CHANNEL,
 	}
-
 	if err := ircClient.Start(ircConf); err != nil {
 		t.Fatalf("Failed to start IRC client: %v", err)
 	}
@@ -29,6 +30,18 @@ func TestRaids(t *testing.T) {
 	chatBot.RegisterClient(ircClient)
 	chatBot.SetChatClient(ircClient)
 
-	raidTmpl := bot.NewHandlerTemplate(bottest.MakeTemplate("raids", "Raid {{.Sender}} of {{.Amount}}"))
-	chatBot.RegisterRaidHandler(raidTmpl, 0)
+	raidTmpl := bot.NewHandlerTemplate(bottest.MakeTemplate("raids", "{{.Sender}} raid of {{.Amount}}"))
+	chatBot.RegisterRaidHandler(raidTmpl, 1)
+
+	// We must Start the bot AFTER the handler is registered
+	chatBot.Start()
+
+	// We should see "USER raid of RAID_SIZE" eventually come through the IRC client
+	raidSize := 5
+	expectedMessage := fmt.Sprintf("PRIVMSG #medgelabs :%s raid of %d", USER, raidSize)
+	ws.SendAndWait(bottest.MakeRaidMessage(USER, raidSize, CHANNEL))
+
+	if !ws.Received(expectedMessage) {
+		t.Fatalf("Did not see expected Raid Message.\nWS Dump:\n%s", ws.String())
+	}
 }

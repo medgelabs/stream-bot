@@ -1,23 +1,40 @@
 package bottest
 
 import (
+	"fmt"
+	"strings"
 	"sync"
+	"time"
 )
 
 type Websocket struct {
 	sync.Mutex
-	lines []string
+	lines      []string
+	readCursor int
 }
 
 func NewTestWebsocket() *Websocket {
 	return &Websocket{
-		lines: make([]string, 5),
+		lines:      make([]string, 0),
+		readCursor: 0,
 	}
 }
 
-// Send is a convenience method over Write()
-func (w *Websocket) Send(message string) {
+// Send is a convenience method over Write() that also waits
+// for a new message to arrive
+func (w *Websocket) SendAndWait(message string) {
+	w.Lock()
 	w.Write([]byte(message))
+	current := len(w.lines)
+	w.Unlock()
+
+	for {
+		if len(w.lines) != current {
+			break
+		}
+
+		time.Sleep(10 * time.Millisecond)
+	}
 }
 
 // Received indicates if the given message contents was _ever_ received
@@ -33,25 +50,43 @@ func (w *Websocket) Received(contents string) bool {
 	return false
 }
 
+// String returns the current WS line buffer as a \n delimited string
+func (w *Websocket) String() string {
+	var sb strings.Builder
+	for _, line := range w.lines {
+		sb.WriteString(line)
+		sb.WriteString("\n")
+	}
+
+	sb.WriteString(fmt.Sprintf("Read Cursor at: %d", w.readCursor))
+
+	return sb.String()
+}
+
 // io.ReadWriteCloser
 func (w *Websocket) Read(dst []byte) (int, error) {
+	// Block until lines available?
+	for {
+		if len(w.lines) != 0 && w.readCursor < len(w.lines) {
+			break
+		}
+
+		time.Sleep(10 * time.Millisecond)
+	}
+
 	w.Lock()
 	defer w.Unlock()
 
-	if len(w.lines) == 0 {
-		// EOF?
-		return 0, nil
-	}
-
-	head := w.lines[0]
+	head := w.lines[w.readCursor]
 	copy(dst, []byte(head))
-	w.lines = w.lines[1:]
+	w.readCursor++
+
 	return len(head), nil
 }
 
 func (w *Websocket) Write(data []byte) (int, error) {
-	w.Lock()
-	defer w.Unlock()
+	// w.Lock()
+	// defer w.Unlock()
 
 	w.lines = append(w.lines, string(data))
 	return len(data), nil
