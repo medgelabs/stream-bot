@@ -1,8 +1,6 @@
 package bottest
 
 import (
-	"fmt"
-	"strings"
 	"testing"
 )
 
@@ -10,23 +8,23 @@ func TestMakeRaidMessage(t *testing.T) {
 	raider := "medgelabs"
 	result := MakeRaidMessage("medgelabs", 1, "medgelabs")
 
-	if !hasTag(result, "msg-id", "raid") {
-		t.Fatalf("Missing tag msg-id in Raid message. Got %s", result)
+	if !HasTag(result, "msg-id", "raid") {
+		t.Fatalf("Missing tag msg-id. Got %s", result)
 	}
 
-	if !hasTag(result, "display-name", raider) {
-		t.Fatalf("Missing tag display-name in Raid message. Got %s", result)
+	if !HasTag(result, "display-name", raider) {
+		t.Fatalf("Missing tag display-name. Got %s", result)
 	}
 
-	if !hasTag(result, "msg-param-displayName", raider) {
-		t.Fatalf("Missing tag msg-param-displayName in Raid message. Got %s", result)
+	if !HasTag(result, "msg-param-displayName", raider) {
+		t.Fatalf("Missing tag msg-param-displayName. Got %s", result)
 	}
 
-	if !hasTag(result, "msg-param-viewerCount", "1") {
-		t.Fatalf("Missing tag msg-param-viewerCount in Raid message. Got %s", result)
+	if !HasTag(result, "msg-param-viewerCount", "1") {
+		t.Fatalf("Missing tag msg-param-viewerCount. Got %s", result)
 	}
 
-	if !hasCommand(result, "USERNOTICE") {
+	if !HasCommand(result, "USERNOTICE") {
 		t.Fatalf("Missing command USERNOTICE. Got %s", result)
 	}
 }
@@ -37,18 +35,21 @@ func TestMakeIrcMessage(t *testing.T) {
 	tags["emotes"] = ""
 	tags["subscriber"] = "1"
 
-	expected := "@display-name=medgelabs;emotes=;subscriber=1; :medgelabs!medgelabs@medgelabs.tmi.twitch.tv PRIVMSG #medgelabs :!hello"
 	result := MakeIrcMessage("!hello", "medgelabs", "PRIVMSG", "medgelabs", tags)
 
-	if result != expected {
-		t.Fatalf("Got wrong IRC message. Expected\n%s\nGot:\n%s", expected, result)
+	if !HasTag(result, "display-name", "medgelabs") {
+		t.Fatalf("Missing tag display-name. Got %s", result)
 	}
-}
 
-func hasTag(msg, tag, tagValue string) bool {
-	return strings.Contains(msg, fmt.Sprintf("%s=%s", tag, tagValue))
-}
+	if !HasTag(result, "emotes", "") {
+		t.Fatalf("Missing tag emotes. Got %s", result)
+	}
 
-func hasCommand(msg, command string) bool {
-	return strings.Contains(msg, command)
+	if !HasTag(result, "subscriber", "1") {
+		t.Fatalf("Missing tag subscriber. Got %s", result)
+	}
+
+	if !HasCommand(result, "PRIVMSG") {
+		t.Fatalf("Missing command PRIVMSG. Got %s", result)
+	}
 }

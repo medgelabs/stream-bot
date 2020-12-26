@@ -1,6 +1,7 @@
 package bottest
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -52,4 +53,14 @@ func MakeIrcMessage(body, sender, command, channel string, tags map[string]strin
 	// Removes trailing ; from last tag
 	str = strings.Replace(str, "; :", " :", 1)
 	return str
+}
+
+// HasTag helper for determining if an IRC message has the given tag/tagValue
+func HasTag(msg, tag, tagValue string) bool {
+	return strings.Contains(msg, fmt.Sprintf("%s=%s", tag, tagValue))
+}
+
+// HasCommand helper for determining if an IRC is the given Command
+func HasCommand(msg, command string) bool {
+	return strings.Contains(msg, command)
 }
