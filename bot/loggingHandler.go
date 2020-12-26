@@ -8,11 +8,12 @@ import (
 func (bot *Bot) RegisterReadLogger() {
 	bot.RegisterHandler(
 		NewHandler(func(evt Event) {
+			// Prefer IRC client tracing instead
 			if evt.IsChatEvent() {
-				log.Printf("> %s: %s", evt.Sender, evt.Message)
-			} else {
-				log.Printf("%+v", evt)
+				return
 			}
+
+			log.Printf("%+v", evt)
 		}),
 	)
 }
