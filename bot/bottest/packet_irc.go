@@ -48,5 +48,8 @@ func MakeIrcMessage(body, sender, command, channel string, tags map[string]strin
 		sb.WriteString(body)
 	}
 
-	return sb.String()
+	str := sb.String()
+	// Removes trailing ; from last tag
+	str = strings.Replace(str, "; :", " :", 1)
+	return str
 }

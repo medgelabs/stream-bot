@@ -22,7 +22,7 @@ func (bot *Bot) HandleCommands() {
 
 				// TODO
 				// Fjoell Feature Request: ASCII Cthulu
-				if strings.HasPrefix(contents, "!cthulu") {
+				if strings.HasPrefix(contents, "!cthulhu") {
 					bot.SendMessage("Hey @medgelabs, GET ON THIS FEATURE!")
 				}
 			}
