@@ -5,6 +5,7 @@ import (
 	"medgebot/bot"
 	"medgebot/bot/bottest"
 	"medgebot/irc"
+	"medgebot/ws/wstest"
 	"testing"
 )
 
@@ -14,7 +15,7 @@ const (
 )
 
 func TestRaids(t *testing.T) {
-	ws := bottest.NewTestWebsocket()
+	ws := wstest.NewWebsocket()
 
 	ircClient := irc.NewClient(ws)
 	ircConf := irc.Config{

@@ -1,39 +1,15 @@
 package irc
 
 import (
-	"bytes"
 	"medgebot/bot"
-	"strings"
-	"sync"
+	"medgebot/ws/wstest"
 	"testing"
 	"time"
 )
 
-type TestConnection struct {
-	bytes.Buffer
-	sync.Mutex
-}
-
-// Helper method for checking if the given string was sent to the TestConnection
-func (t *TestConnection) Received(str string) bool {
-	t.Lock()
-	defer t.Unlock()
-	return strings.Contains(t.String(), str)
-}
-
-func (t *TestConnection) Clear() {
-	t.Lock()
-	defer t.Unlock()
-	t.Reset()
-}
-
-func (t *TestConnection) Close() error {
-	return nil
-}
-
 func TestStart(t *testing.T) {
 	// Ensure PASS, NICK, JOIN, and CAP REQ commands are sent
-	conn := &TestConnection{}
+	conn := wstest.NewWebsocket()
 
 	config := Config{
 		Nick:     "medgelabs",
@@ -59,7 +35,7 @@ func TestStart(t *testing.T) {
 }
 
 func TestMessageReceivedFromServer(t *testing.T) {
-	conn := &TestConnection{}
+	conn := wstest.NewWebsocket()
 	config := Config{
 		Nick:     "medgelabs",
 		Password: "oauth:secret",
@@ -69,13 +45,11 @@ func TestMessageReceivedFromServer(t *testing.T) {
 
 	testBot := make(chan bot.Event)
 	irc.SetDestination(testBot)
-
 	irc.Start(config)
-	conn.Clear()
 
-	conn.WriteString(CHAT_MSG_TAGS)
+	conn.Send(CHAT_MSG_TAGS)
 
-	// Wait for message on
+	// Wait for message on bot Event channel
 	select {
 	case evt := <-testBot:
 		if evt.Type != bot.CHAT_MSG {
@@ -85,7 +59,3 @@ func TestMessageReceivedFromServer(t *testing.T) {
 		t.Fatalf("Failed to receive expected message")
 	}
 }
-
-// func TestSendMessageToServer(t *testing.T) {
-// t.Fatalf("Not Implemented")
-// }

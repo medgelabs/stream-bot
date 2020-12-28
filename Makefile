@@ -8,3 +8,9 @@ build:
 .PHONY: build-mac
 build-mac:
 	GOOS=darwin GOARCH=amd64 go build -o ${BUILD_DIR}/${APP}-mac main.go
+
+.PHONY: test
+test:
+	go test ./... -coverprofile out.prof
+	go tool cover -func ./out.prof | grep total
+	rm ./out.prof
