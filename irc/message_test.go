@@ -55,6 +55,7 @@ func TestParseIrcLine(t *testing.T) {
 			Channel:  channel,
 			Contents: "Cheer1",
 		}},
+		{description: "Empty line should not explode", input: "", expected: NewMessage()},
 	}
 
 	for _, test := range tests {
@@ -87,7 +88,7 @@ func TestRaidMessageParsing(t *testing.T) {
 func TestRaidMessageParsingInvalidRaidSize(t *testing.T) {
 	// Invalid raid size value should default to 0
 	invalid := parseIrcLine(irctest.MakeRaidMessage(assistant, 1, channel))
-	invalid.AddTag("msg-param-viewerCount", "asdf") // Invalid raid size
+	invalid.AddTag("msg-param-viewerCount", "asdf")
 	if invalid.RaidSize() != 0 {
 		t.Fatalf("Invalid raid size should have defaulted to 0. Got: %d", invalid.RaidSize())
 	}
@@ -109,6 +110,15 @@ func TestBitsMessageParsing(t *testing.T) {
 	}
 }
 
+func TestBitsMessageParsingInvalidBitAmount(t *testing.T) {
+	// Invalid bits value should default to 0
+	invalid := parseIrcLine(irctest.MakeBitsMessage(assistant, 1, channel))
+	invalid.AddTag("bits", "asdf")
+	if invalid.BitsAmount() != 0 {
+		t.Fatalf("Invalid bits amount should have defaulted to 0. Got: %d", invalid.BitsAmount())
+	}
+}
+
 func TestSubMessageParsing(t *testing.T) {
 	parsed := parseIrcLine(irctest.MakeSubMessage(assistant, 1, "medgelabs"))
 
@@ -122,6 +132,15 @@ func TestSubMessageParsing(t *testing.T) {
 
 	if parsed.SubMonths() != 1 {
 		t.Fatalf("SubMonths should be 1, but got %d", parsed.SubMonths())
+	}
+}
+
+func TestSubMessageParsingInvalidSubMonths(t *testing.T) {
+	// Invalid sub months value should default to 0
+	invalid := parseIrcLine(irctest.MakeSubMessage(assistant, 1, channel))
+	invalid.AddTag("msg-param-cumulative-months", "asdf")
+	if invalid.SubMonths() != 0 {
+		t.Fatalf("Invalid Sub Months should have defaulted to 0. Got: %d", invalid.SubMonths())
 	}
 }
 
