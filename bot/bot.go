@@ -28,11 +28,6 @@ type Client interface {
 	SetDestination(chan<- Event)
 }
 
-// ChatClient is a connector to Chat that the Bot sends messages to
-type ChatClient interface {
-	Channel() chan<- Event
-}
-
 func New() Bot {
 	return Bot{
 		consumers: make([]Handler, 0),

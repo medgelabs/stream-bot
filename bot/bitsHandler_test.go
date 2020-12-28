@@ -5,21 +5,6 @@ import (
 	"testing"
 )
 
-type TestChatClient struct {
-	events chan Event
-}
-
-func NewTestChatClient() TestChatClient {
-	return TestChatClient{
-		events: make(chan Event),
-	}
-}
-
-// bot.ChatClient
-func (c TestChatClient) Channel() chan<- Event {
-	return c.events
-}
-
 // Bits handler through the Bot
 func TestBitsHandler(t *testing.T) {
 	// Initialize Bot
@@ -47,8 +32,25 @@ func TestBitsHandler(t *testing.T) {
 		t.Fatalf("Got invalid bits response: %+v", response)
 	}
 
+}
+
+func TestBitsHandlerIgnoresInvalidEvents(t *testing.T) {
+	// Initialize Bot
+	bot := New()
+	checker := NewTestChatClient()
+	bot.SetChatClient(checker)
+
+	// Initialize Bits Handler
+	tmpl := bottest.MakeTemplate("testBits", "Thanks for the {{.Amount}} bits {{.Sender}}")
+	bot.RegisterBitsHandler(HandlerTemplate{
+		templ: tmpl,
+	})
+
+	// This must happen after Handler registration, else data race occurs
+	bot.Start()
+
 	// Invalid event
-	evt = NewRaidEvent()
+	evt := NewRaidEvent()
 	bot.events <- evt
 
 	select {
