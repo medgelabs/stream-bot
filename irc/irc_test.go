@@ -2,6 +2,7 @@ package irc
 
 import (
 	"medgebot/bot"
+	"medgebot/irc/irctest"
 	"medgebot/ws/wstest"
 	"testing"
 	"time"
@@ -47,7 +48,7 @@ func TestMessageReceivedFromServer(t *testing.T) {
 	irc.SetDestination(testBot)
 	irc.Start(config)
 
-	conn.Send(CHAT_MSG_TAGS)
+	conn.Send(irctest.MakeChatMessage("testuser", "Chat!", "medgelabs"))
 
 	// Wait for message on bot Event channel
 	select {

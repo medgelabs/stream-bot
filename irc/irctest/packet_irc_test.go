@@ -1,4 +1,4 @@
-package bottest
+package irctest
 
 import (
 	"testing"
@@ -35,7 +35,7 @@ func TestMakeIrcMessage(t *testing.T) {
 	tags["emotes"] = ""
 	tags["subscriber"] = "1"
 
-	result := MakeIrcMessage("!hello", "medgelabs", "PRIVMSG", "medgelabs", tags)
+	result := makeIrcMessage("!hello", "medgelabs", "PRIVMSG", "medgelabs", tags)
 
 	if !HasTag(result, "display-name", "medgelabs") {
 		t.Fatalf("Missing tag display-name. Got %s", result)

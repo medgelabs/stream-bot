@@ -13,7 +13,6 @@ const (
 	MSG_GIFTSUB
 	MSG_BITS
 	MSG_CHAT
-	MSG_SYSTEM // mostly for messages like PING/PONG
 )
 
 // Message represents a line of text from the IRC stream
@@ -121,7 +120,7 @@ func (msg Message) parseUserNoticeMessageType() int {
 	case "subgift":
 		return MSG_GIFTSUB
 	default:
-		return MSG_SYSTEM
+		return MSG_CHAT
 	}
 }
 
