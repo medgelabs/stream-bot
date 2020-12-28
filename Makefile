@@ -14,3 +14,9 @@ test:
 	go test ./... -coverprofile out.prof
 	go tool cover -func ./out.prof | grep total
 	rm ./out.prof
+
+.PHONY: coverage
+coverage:
+	go test ./... -coverprofile out.prof
+	go tool cover -html=out.prof
+	rm ./out.prof
