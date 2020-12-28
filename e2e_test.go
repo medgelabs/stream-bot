@@ -5,6 +5,8 @@ import (
 	"medgebot/bot"
 	"medgebot/bot/bottest"
 	"medgebot/irc"
+	"medgebot/irc/irctest"
+	"medgebot/ws/wstest"
 	"testing"
 )
 
@@ -14,7 +16,7 @@ const (
 )
 
 func TestRaids(t *testing.T) {
-	ws := bottest.NewTestWebsocket()
+	ws := wstest.NewWebsocket()
 
 	ircClient := irc.NewClient(ws)
 	ircConf := irc.Config{
@@ -39,7 +41,7 @@ func TestRaids(t *testing.T) {
 	// We should see "USER raid of RAID_SIZE" eventually come through the IRC client
 	raidSize := 5
 	expectedMessage := fmt.Sprintf("PRIVMSG #medgelabs :%s raid of %d", USER, raidSize)
-	ws.SendAndWait(bottest.MakeRaidMessage(USER, raidSize, CHANNEL))
+	ws.SendAndWait(irctest.MakeRaidMessage(USER, raidSize, CHANNEL))
 
 	if !ws.Received(expectedMessage) {
 		t.Fatalf("Did not see expected Raid Message.\nWS Dump:\n%s", ws.String())

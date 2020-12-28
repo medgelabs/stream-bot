@@ -13,7 +13,6 @@ const (
 	MSG_GIFTSUB
 	MSG_BITS
 	MSG_CHAT
-	MSG_SYSTEM // mostly for messages like PING/PONG
 )
 
 // Message represents a line of text from the IRC stream
@@ -39,10 +38,6 @@ func (msg Message) Tag(tag string) string {
 
 // AddTag populates the given key/value pair
 func (msg *Message) AddTag(tag, value string) {
-	if msg.Tags == nil {
-		msg.Tags = make(map[string]string)
-	}
-
 	msg.Tags[tag] = value
 }
 
@@ -50,7 +45,7 @@ func (msg *Message) AddTag(tag, value string) {
 func parseIrcLine(message string) Message {
 	if strings.TrimSpace(message) == "" {
 		log.Println("WARN: attempt to parse empty IRC line")
-		return Message{}
+		return NewMessage()
 	}
 
 	// TrimSpace to get rid of /r/n
@@ -121,7 +116,7 @@ func (msg Message) parseUserNoticeMessageType() int {
 	case "subgift":
 		return MSG_GIFTSUB
 	default:
-		return MSG_SYSTEM
+		return MSG_CHAT
 	}
 }
 

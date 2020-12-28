@@ -1,4 +1,4 @@
-package bottest
+package wstest
 
 import (
 	"fmt"
@@ -13,18 +13,24 @@ type Websocket struct {
 	readCursor int
 }
 
-func NewTestWebsocket() *Websocket {
+func NewWebsocket() *Websocket {
 	return &Websocket{
 		lines:      make([]string, 0),
 		readCursor: 0,
 	}
 }
 
+// Send is a convenience method over Write()
+func (w *Websocket) Send(message string) {
+	w.Write([]byte(message))
+}
+
 // Send is a convenience method over Write() that also waits
 // for a new message to arrive
 func (w *Websocket) SendAndWait(message string) {
-	w.Lock()
 	w.Write([]byte(message))
+
+	w.Lock()
 	current := len(w.lines)
 	w.Unlock()
 
@@ -85,8 +91,8 @@ func (w *Websocket) Read(dst []byte) (int, error) {
 }
 
 func (w *Websocket) Write(data []byte) (int, error) {
-	// w.Lock()
-	// defer w.Unlock()
+	w.Lock()
+	defer w.Unlock()
 
 	w.lines = append(w.lines, string(data))
 	return len(data), nil
