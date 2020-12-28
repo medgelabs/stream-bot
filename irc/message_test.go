@@ -14,6 +14,15 @@ const (
 	CHAT_MSG_BASE = ":assistant1!assistant1@assistant1.tmi.twitch.tv PRIVMSG #medgelabs :Yes, we can test"
 )
 
+func TestTags(t *testing.T) {
+	msg := NewMessage()
+
+	msg.AddTag("display-name", assistant)
+	if msg.Tag("display-name") != assistant {
+		t.Fatalf("Expected display-name tag to be %s. Got: %s", assistant, msg.Tag("display-name"))
+	}
+}
+
 func TestParseIrcLine(t *testing.T) {
 	tests := []struct {
 		description string
@@ -71,6 +80,16 @@ func TestRaidMessageParsing(t *testing.T) {
 
 	if parsed.RaidSize() != 1 {
 		t.Fatalf("RaidSize should be 1, but got %d", parsed.RaidSize())
+	}
+
+}
+
+func TestRaidMessageParsingInvalidRaidSize(t *testing.T) {
+	// Invalid raid size value should default to 0
+	invalid := parseIrcLine(irctest.MakeRaidMessage(assistant, 1, channel))
+	invalid.AddTag("msg-param-viewerCount", "asdf") // Invalid raid size
+	if invalid.RaidSize() != 0 {
+		t.Fatalf("Invalid raid size should have defaulted to 0. Got: %d", invalid.RaidSize())
 	}
 }
 
@@ -159,4 +178,12 @@ func TestParseUserNoticeMessageType(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Trailing semicolon at the end of the tags block would cause an empty tag to be registered, which
+// caused the `msg.AddTag(parts[0], parts[1])` part to panic (index out of bounds).
+// This test should not panic in such an event
+func TestEmptyTagDoesntExplode(t *testing.T) {
+	line := "@display-name=medgelabs; tmi.twitch.tv PRIVMSG :Trailing semicolon causes empty tag. Should not explode"
+	_ = parseIrcLine(line)
 }
