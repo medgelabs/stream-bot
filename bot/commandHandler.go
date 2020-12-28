@@ -10,7 +10,7 @@ func (bot *Bot) HandleCommands() {
 			if evt.IsChatEvent() {
 				contents := evt.Message
 
-				// Obligatory Hello, World
+				// Obligatory Hello, World (also used in Unit Test)
 				if strings.HasPrefix(contents, "!hello") {
 					bot.SendMessage("WORLD")
 				}
