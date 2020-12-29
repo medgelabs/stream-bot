@@ -1,26 +1,24 @@
-medgelabs:
-  channelId: 62232210
-  greeter:
-    messageFormat: "Welcome to the lab, @{{.Sender}}!"
-  channelPoints:
-    messageFormat: "Thanks for the research @{{.Sender}}!"
-  raid:
-    messageFormat: "!so @{{.Sender}}"
-  bits:
-    messageFormat: "@{{.Sender}} gave {{.Amount}} hours of research to the Lab!"
-  subs:
-    messageFormat: "Thank you for {{.Amount}} months in the Lab, @{{.Sender}}!"
-  giftsubs:
-    messageFormat: "@{{.Sender}} loaned their lab coat to @{{.Recipient}}!"
-sorceryandsarcasm:
-  channelId: 66490190
-  raid:
-    enabled: true
-    delaySeconds: 2
-    messageFormat: "!so @{{.Sender}}"
-spookyghostmachine:
-  channelId: 119432399
-  greeter:
-    messageFormat: "@{{.Sender}} spooky127Hype"
-  raid:
-    messageFormat: "!so @{{.Sender}}"
+channelId: 62232210
+commands:
+  enabled: true
+greeter:
+  enabled: true
+  expirationTimeSeconds: 43200 # 12 hours
+  messageFormat: "Welcome to the lab, @{{.Sender}}!"
+  ignore:
+    - medgelabs
+    - nightbot
+    - soundalerts
+    - streamlabs
+raids:
+  enabled: true
+  messageFormat: "!so @{{.Sender}}"
+bits:
+  enabled: true
+  messageFormat: "@{{.Sender}} gave {{.Amount}} hours of research to the Lab!"
+subs:
+  enabled: true
+  messageFormat: "Thank you for {{.Amount}} months in the Lab, @{{.Sender}}!"
+giftsubs:
+  enabled: true
+  messageFormat: "@{{.Sender}} loaned their lab coat to @{{.Recipient}}!"
