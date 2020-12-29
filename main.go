@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"medgebot/bot"
-	"medgebot/config"
 	"medgebot/greeter"
 	"medgebot/irc"
 	"medgebot/ledger"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 func main() {
@@ -23,28 +24,50 @@ func main() {
 	var nick string
 	var ledgerType string
 	var secretStoreType string
+	var enableAll bool
+	var enableGreeter bool
+	var enableCommands bool
+	var enableRaidMessage bool
+	var enableBitsMessage bool
+	var enableSubsMessage bool
 
 	flag.StringVar(&channel, "channel", "", "Channel name, without the #, to join")
 	flag.StringVar(&nick, "nick", "", "Nickname to join Chat with")
 	flag.StringVar(&ledgerType, "ledger", ledger.REDIS, fmt.Sprintf("Ledger type string. Options: %s, %s, %s", ledger.REDIS, ledger.FILE, ledger.MEM))
 	flag.StringVar(&secretStoreType, "store", secret.VAULT, fmt.Sprintf("Secret Store type string. Options: %s, %s", secret.VAULT, secret.ENV))
 
+	flag.BoolVar(&enableAll, "all", false, "Enable all features")
+	flag.BoolVar(&enableGreeter, "greeter", false, "Enable the auto-greeter")
+	flag.BoolVar(&enableCommands, "commands", false, "Enable Command processing")
+	flag.BoolVar(&enableRaidMessage, "raids", false, "Enable Raid auto-shoutout")
+	flag.BoolVar(&enableBitsMessage, "bits", false, "Enable Bits auto-thanks")
+	flag.BoolVar(&enableSubsMessage, "subs", false, "Enable Subs auto-thanks")
+
 	flag.Parse()
 
 	// Flag error handling
-	if !strings.HasPrefix(channel, "#") {
-		channel = fmt.Sprintf("#%s", channel)
+	if strings.HasPrefix(channel, "#") {
+		log.Fatalln("FATAL: channel cannot start with a #")
 	}
+	channel = fmt.Sprintf("#%s", channel)
 
 	if nick == "" {
 		log.Fatalln("FATAL: nick empty")
 	}
 
-	conf := config.LoadConfig()
+	// Initialize configuration and read from config.yaml
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("FATAL: read config.yaml - %v", err)
+	}
 
 	// Initialize desired state for the bot
 	chatBot := bot.New()
 	chatBot.RegisterReadLogger()
+
+	/// Plugin Registration ///
 
 	// Initialize Secrets Store
 	store, err := secret.NewSecretStore(secretStoreType)
@@ -58,13 +81,18 @@ func main() {
 	}
 
 	// IRC
+	ircConfig := irc.Config{
+		Nick:     nick,
+		Password: fmt.Sprintf("oauth:%s", password),
+		Channel:  channel,
+	}
+
 	ircWs := ws.NewWebsocket()
 	ircWs.Connect("wss", "irc-ws.chat.twitch.tv:443")
-	irc := irc.NewClient(ircWs, channel)
+	irc := irc.NewClient(ircWs)
 	defer irc.Close()
 
-	pass := fmt.Sprintf("oauth:%s", password)
-	err = irc.Start(nick, pass)
+	err = irc.Start(ircConfig)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -73,27 +101,48 @@ func main() {
 	chatBot.RegisterClient(irc)
 	chatBot.SetChatClient(irc)
 
-	// Feature enablement
+	// PubSub
+	// channelIdKey := fmt.Sprintf("%s.channelId", strings.Trim(channel, "#"))
+	// channelId := viper.GetString(channelIdKey)
+	// pubSub := twitch.NewPubSubClient(channelId, password)
+	// defer pubSub.Close()
 
-	if conf.FeatureEnabled("commands") {
+	// err = pubSub.Connect("wss", "pubsub-edge.twitch.tv")
+	// if err != nil {
+	// log.Fatalf(err.Error())
+	// }
+
+	// go pubSub.Start()
+
+	// if err := chatBot.RegisterInboundPlugin(pubSub); err != nil {
+	// log.Fatalf("FATAL: failed to register PubSub: %v", err)
+	// }
+	/// Plugin Registration END ///
+
+	if enableCommands || enableAll {
 		chatBot.HandleCommands()
 	}
 
-	if conf.FeatureEnabled("greeter") {
-		var expirationTime int64 = conf.GetInt64("greeter.expirationTimeSeconds")
+	if enableGreeter || enableAll {
+		// Ledger for the auto greeter
+		// TODO get from config
+		var expirationTime int64 = 1000 * 60 * 60 * 12 // 12 hours
 		ledger, err := ledger.NewLedger(ledgerType, expirationTime)
 		if err != nil {
 			log.Fatalf("FATAL: create ledger - %v", err)
 		}
 
 		// pre-seed names we don't want greeted
-		ignores := conf.GetList("greeter.ignore")
-		for _, ignore := range ignores {
-			ledger.Add(ignore)
-		}
+		ledger.Add("streamlabs")
+		ledger.Add("nightbot")
+		ledger.Add("ranaebot")
+		ledger.Add("soundalerts")
+		ledger.Add(nick)
+		ledger.Add(strings.TrimPrefix(channel, "#")) // Prevent greeting the broadcaster
 
 		// Greeter config
-		greetMessageFormat := conf.GetString("greeter.messageFormat")
+		greetKey := fmt.Sprintf("%s.greeter.messageFormat", strings.Trim(channel, "#"))
+		greetMessageFormat := viper.GetString(greetKey)
 		greetBot := greeter.New(ledger)
 		greetTempl, err := template.New("greeter").Parse(greetMessageFormat)
 		if err != nil {
@@ -103,21 +152,25 @@ func main() {
 		chatBot.RegisterGreeter(greetBot, bot.NewHandlerTemplate(greetTempl))
 	}
 
-	if conf.FeatureEnabled("raids") {
-		raidMessageFormat := conf.GetString("raids.messageFormat")
-		raidDelay := conf.GetIntOrDefault("raids.delaySeconds", 0)
+	if enableRaidMessage || enableAll {
+		raidKey := fmt.Sprintf("%s.raid.messageFormat", strings.Trim(channel, "#"))
+		raidMessageFormat := viper.GetString(raidKey)
+
+		viper.SetDefault("%s.raid.delaySeconds", 0)
+		raidDelayKey := fmt.Sprintf("%s.raid.delaySeconds", strings.Trim(channel, "#"))
+		raidDelay := viper.GetInt(raidDelayKey)
 
 		raidTempl, err := template.New("raids").Parse(raidMessageFormat)
 		if err != nil {
 			log.Fatalf("FATAL: invalid raid message in config - %v", err)
 		}
-
 		chatBot.RegisterRaidHandler(
 			bot.NewHandlerTemplate(raidTempl), raidDelay)
 	}
 
-	if conf.FeatureEnabled("bits") {
-		bitsMessageFormat := conf.GetString("bits.messageFormat")
+	if enableBitsMessage || enableAll {
+		bitsKey := fmt.Sprintf("%s.bits.messageFormat", strings.Trim(channel, "#"))
+		bitsMessageFormat := viper.GetString(bitsKey)
 
 		bitsTempl, err := template.New("bits").Parse(bitsMessageFormat)
 		if err != nil {
@@ -128,26 +181,23 @@ func main() {
 			bot.NewHandlerTemplate(bitsTempl))
 	}
 
-	if conf.FeatureEnabled("subs") {
-		subsMessageFormat := conf.GetString("subs.messageFormat")
+	if enableSubsMessage || enableAll {
+		subsKey := fmt.Sprintf("%s.subs.messageFormat", strings.Trim(channel, "#"))
+		subsMessageFormat := viper.GetString(subsKey)
 		subsTempl, err := template.New("subs").Parse(subsMessageFormat)
 		if err != nil {
 			log.Fatalf("FATAL: invalid subs message in config - %v", err)
 		}
 
-		chatBot.RegisterSubsHandler(
-			bot.NewHandlerTemplate(subsTempl))
-	}
-
-	if conf.FeatureEnabled("giftsubs") {
-		giftSubsMessageFormat := conf.GetString("giftsubs.messageFormat")
+		giftSubsKey := fmt.Sprintf("%s.giftsubs.messageFormat", strings.Trim(channel, "#"))
+		giftSubsMessageFormat := viper.GetString(giftSubsKey)
 		giftSubsTempl, err := template.New("giftsubs").Parse(giftSubsMessageFormat)
 		if err != nil {
 			log.Fatalf("FATAL: invalid subs message in config - %v", err)
 		}
 
-		chatBot.RegisterGiftSubsHandler(
-			bot.NewHandlerTemplate(giftSubsTempl))
+		chatBot.RegisterSubsHandler(
+			bot.NewHandlerTemplate(subsTempl), bot.NewHandlerTemplate(giftSubsTempl))
 	}
 
 	if err := chatBot.Start(); err != nil {

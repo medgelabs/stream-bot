@@ -20,7 +20,7 @@ type FileLedger struct {
 	expiration     int64
 }
 
-func NewFileLedger(ledger *os.File, keyExpirationSeconds int64) (FileLedger, error) {
+func NewFileLedger(ledger *os.File, keyExpirationTime int64) (FileLedger, error) {
 	cache := make(map[string]int64)
 	lineSeparator := "\n"
 	fieldSeparator := ","
@@ -55,7 +55,7 @@ func NewFileLedger(ledger *os.File, keyExpirationSeconds int64) (FileLedger, err
 			continue
 		}
 
-		expirationTime := time.Now().Unix() - keyExpirationSeconds
+		expirationTime := time.Now().Unix() - keyExpirationTime
 		if ts < expirationTime {
 			continue
 		}
@@ -70,7 +70,7 @@ func NewFileLedger(ledger *os.File, keyExpirationSeconds int64) (FileLedger, err
 		cache:          cache,
 		lineSeparator:  lineSeparator,
 		fieldSeparator: fieldSeparator,
-		expiration:     keyExpirationSeconds,
+		expiration:     keyExpirationTime,
 	}
 
 	// Setup cache flushing
