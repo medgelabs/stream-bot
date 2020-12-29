@@ -12,14 +12,19 @@ import (
 
 const (
 	USER    = "medgelabs"
-	CHANNEL = "#medgelabs"
+	CHANNEL = "medgelabs"
 )
 
 func TestRaids(t *testing.T) {
 	ws := wstest.NewWebsocket()
 
-	ircClient := irc.NewClient(ws, CHANNEL)
-	if err := ircClient.Start(USER, "oauth:superSpookyGhostMachineTestSecret"); err != nil {
+	ircClient := irc.NewClient(ws)
+	ircConf := irc.Config{
+		Nick:     USER,
+		Password: "oauth:superSpookyGhostMachineTestSecret",
+		Channel:  "#" + CHANNEL,
+	}
+	if err := ircClient.Start(ircConf); err != nil {
 		t.Fatalf("Failed to start IRC client: %v", err)
 	}
 

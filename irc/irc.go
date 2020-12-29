@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"medgebot/bot"
-	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -18,30 +17,30 @@ const (
 // Irc client
 type Irc struct {
 	sync.Mutex
-	channel        string
 	conn           io.ReadWriteCloser
 	inboundEvents  chan bot.Event
 	outboundEvents chan<- bot.Event
 }
 
-func NewClient(conn io.ReadWriteCloser, channel string) *Irc {
-	if !strings.HasPrefix(channel, "#") {
-		channel = fmt.Sprintf("#%s", channel)
-	}
+type Config struct {
+	Nick     string
+	Password string
+	Channel  string
+}
 
+func NewClient(conn io.ReadWriteCloser) *Irc {
 	return &Irc{
-		channel:       channel,
 		conn:          conn,
 		inboundEvents: make(chan bot.Event),
 	}
 }
 
-func (irc *Irc) Start(nick, pass string) error {
-	if err := irc.Authenticate(nick, pass); err != nil {
+func (irc *Irc) Start(config Config) error {
+	if err := irc.Authenticate(config.Nick, config.Password); err != nil {
 		return errors.Errorf("FATAL: irc authentication failure - %s", err)
 	}
 
-	if err := irc.Join(irc.channel); err != nil {
+	if err := irc.Join(config.Channel); err != nil {
 		return errors.Errorf("FATAL: irc join channel failed: %s", err)
 	}
 
@@ -68,7 +67,7 @@ func (irc *Irc) Start(nick, pass string) error {
 	// Read loop for receiving messages from the bot
 	go func() {
 		for recv := range irc.inboundEvents {
-			irc.PrivMsg(irc.channel, recv.Message)
+			irc.PrivMsg(config.Channel, recv.Message)
 		}
 	}()
 
@@ -95,7 +94,7 @@ func (irc *Irc) Authenticate(nick, password string) error {
 func (irc *Irc) Join(channel string) error {
 	joinCmd := Message{
 		Command:  "JOIN",
-		Contents: strings.TrimPrefix(channel, "#"),
+		Contents: channel,
 	}
 
 	return irc.write(joinCmd)
