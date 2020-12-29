@@ -12,7 +12,7 @@ import (
 
 const (
 	USER    = "medgelabs"
-	CHANNEL = "medgelabs"
+	CHANNEL = "#medgelabs"
 )
 
 func TestRaids(t *testing.T) {

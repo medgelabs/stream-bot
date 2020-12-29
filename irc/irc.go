@@ -25,6 +25,10 @@ type Irc struct {
 }
 
 func NewClient(conn io.ReadWriteCloser, channel string) *Irc {
+	if !strings.HasPrefix(channel, "#") {
+		channel = fmt.Sprintf("#%s", channel)
+	}
+
 	return &Irc{
 		channel:       channel,
 		conn:          conn,

@@ -42,8 +42,8 @@ func TestGiftSubHandler(t *testing.T) {
 	bot.SetChatClient(checker)
 
 	// Initialize Handler
-	bot.RegisterSubsHandler(
-		HandlerTemplate{templ: subsTmpl})
+	bot.RegisterGiftSubsHandler(
+		HandlerTemplate{templ: giftSubTmpl})
 
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()
