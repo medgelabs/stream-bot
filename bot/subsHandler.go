@@ -1,14 +1,20 @@
 package bot
 
-func (bot *Bot) RegisterSubsHandler(subsTemplate, giftSubsTemplate HandlerTemplate) {
+func (bot *Bot) RegisterSubsHandler(subsTemplate HandlerTemplate) {
 	bot.RegisterHandler(
 		NewHandler(func(evt Event) {
 			if evt.IsSubEvent() {
 				bot.SendMessage(subsTemplate.Parse(evt))
-			} else if evt.IsGiftSubEvent() {
+			}
+		}),
+	)
+}
+
+func (bot *Bot) RegisterGiftSubsHandler(giftSubsTemplate HandlerTemplate) {
+	bot.RegisterHandler(
+		NewHandler(func(evt Event) {
+			if evt.IsGiftSubEvent() {
 				bot.SendMessage(giftSubsTemplate.Parse(evt))
-			} else {
-				return // no messaging otherwise
 			}
 		}),
 	)

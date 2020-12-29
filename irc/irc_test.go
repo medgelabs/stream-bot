@@ -9,44 +9,41 @@ import (
 )
 
 func TestStart(t *testing.T) {
+	pass := "oauth:secret"
+	nick := "medgelabs"
+	channel := "medgelabs"
+
 	// Ensure PASS, NICK, JOIN, and CAP REQ commands are sent
 	conn := wstest.NewWebsocket()
+	irc := NewClient(conn, channel)
 
-	config := Config{
-		Nick:     "medgelabs",
-		Password: "oauth:secret",
-		Channel:  "#medgelabs",
-	}
-
-	irc := NewClient(conn)
-	irc.Start(config)
-
+	irc.Start(nick, pass)
 	output := conn.String()
-	if !conn.Received("PASS " + config.Password) {
+	if !conn.Received("PASS " + pass) {
 		t.Fatalf("PASS command not sent to connection. Sent: %s", output)
 	}
 
-	if !conn.Received("NICK " + config.Nick) {
+	if !conn.Received("NICK " + nick) {
 		t.Fatalf("NICK command not sent to connection. Sent: %s", output)
 	}
 
-	if !conn.Received("JOIN " + config.Channel) {
+	if !conn.Received("JOIN " + channel) {
 		t.Fatalf("JOIN command not sent to connection. Sent: %s", output)
 	}
 }
 
 func TestMessageReceivedFromServer(t *testing.T) {
+	pass := "oauth:secret"
+	nick := "medgelabs"
+	channel := "medgelabs"
+
 	conn := wstest.NewWebsocket()
-	config := Config{
-		Nick:     "medgelabs",
-		Password: "oauth:secret",
-		Channel:  "#medgelabs",
-	}
-	irc := NewClient(conn)
+	irc := NewClient(conn, channel)
 
 	testBot := make(chan bot.Event)
 	irc.SetDestination(testBot)
-	irc.Start(config)
+
+	irc.Start(nick, pass)
 
 	conn.Send(irctest.MakeChatMessage("testuser", "Chat!", "medgelabs"))
 
