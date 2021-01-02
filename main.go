@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"log"
 	"medgebot/bot"
-	"medgebot/greeter"
 	"medgebot/irc"
 	"medgebot/ledger"
 	"medgebot/secret"
+	"medgebot/server"
 	"medgebot/ws"
+	"net/http"
 	"strings"
 	"text/template"
-	"time"
 
 	"github.com/spf13/viper"
 )
@@ -114,22 +114,21 @@ func main() {
 		}
 
 		// pre-seed names we don't want greeted
-		ledger.Add("streamlabs")
-		ledger.Add("nightbot")
-		ledger.Add("ranaebot")
-		ledger.Add("soundalerts")
-		ledger.Add(strings.TrimPrefix(channel, "#")) // Prevent greeting the broadcaster
+		ledger.Put("streamlabs", "")
+		ledger.Put("nightbot", "")
+		ledger.Put("ranaebot", "")
+		ledger.Put("soundalerts", "")
+		ledger.Put(strings.TrimPrefix(channel, "#"), "") // Prevent greeting the broadcaster
 
 		// Greeter config
 		greetKey := fmt.Sprintf("%s.greeter.messageFormat", strings.Trim(channel, "#"))
 		greetMessageFormat := viper.GetString(greetKey)
-		greetBot := greeter.New(ledger)
 		greetTempl, err := template.New("greeter").Parse(greetMessageFormat)
 		if err != nil {
 			log.Fatalf("FATAL: invalid Greeter message in config - %v", err)
 		}
 
-		chatBot.RegisterGreeter(greetBot, bot.NewHandlerTemplate(greetTempl))
+		chatBot.RegisterGreeter(ledger, bot.NewHandlerTemplate(greetTempl))
 	}
 
 	if enableRaidMessage || enableAll {
@@ -184,8 +183,7 @@ func main() {
 		log.Fatalf("FATAL: bot connect - %v", err)
 	}
 
-	// Keep the process alive
-	for {
-		time.Sleep(time.Second)
-	}
+	// Start HTTP server
+	srv := server.New()
+	log.Fatal(http.ListenAndServe(":8080", srv))
 }

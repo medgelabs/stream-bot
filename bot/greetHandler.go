@@ -2,12 +2,12 @@ package bot
 
 import (
 	"log"
-	"medgebot/greeter"
+	"medgebot/ledger"
 	"strings"
 	"time"
 )
 
-func (bot *Bot) RegisterGreeter(greeter greeter.Greeter, messageTemplate HandlerTemplate) {
+func (bot *Bot) RegisterGreeter(ledger ledger.Ledger, messageTemplate HandlerTemplate) {
 	bot.RegisterHandler(
 		NewHandler(func(evt Event) {
 			username := strings.ToLower(evt.Sender)
@@ -16,12 +16,12 @@ func (bot *Bot) RegisterGreeter(greeter greeter.Greeter, messageTemplate Handler
 				return
 			}
 
-			if greeter.HasNotGreeted(username) {
+			if ledger.Absent(username) {
 				log.Printf("Never seen %s before", username)
 				time.Sleep(3 * time.Second)
 
 				bot.SendMessage(messageTemplate.Parse(evt))
-				greeter.RecordGreeting(username)
+				ledger.Put(username, "")
 			}
 		}),
 	)

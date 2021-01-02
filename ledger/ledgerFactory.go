@@ -33,7 +33,7 @@ func NewLedger(ledgerType string, keyExpirationTime int64) (Ledger, error) {
 		}
 		return &ledger, err
 	case MEM:
-		mem := NewInMemoryLedger()
+		mem, _ := NewInMemoryLedger(keyExpirationTime)
 		return &mem, nil
 	default:
 		return nil, fmt.Errorf("Invalid ledgerType " + ledgerType)
