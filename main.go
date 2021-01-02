@@ -9,10 +9,11 @@ import (
 	"medgebot/irc"
 	"medgebot/ledger"
 	"medgebot/secret"
+	"medgebot/server"
 	"medgebot/ws"
+	"net/http"
 	"strings"
 	"text/template"
-	"time"
 
 	"github.com/spf13/viper"
 )
@@ -184,8 +185,7 @@ func main() {
 		log.Fatalf("FATAL: bot connect - %v", err)
 	}
 
-	// Keep the process alive
-	for {
-		time.Sleep(time.Second)
-	}
+	// Start HTTP server
+	srv := server.New()
+	log.Fatal(http.ListenAndServe(":8080", srv))
 }
