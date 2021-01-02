@@ -67,8 +67,6 @@ func main() {
 	chatBot := bot.New()
 	chatBot.RegisterReadLogger()
 
-	/// Plugin Registration ///
-
 	// Initialize Secrets Store
 	store, err := secret.NewSecretStore(secretStoreType)
 	if err != nil {
@@ -101,24 +99,7 @@ func main() {
 	chatBot.RegisterClient(irc)
 	chatBot.SetChatClient(irc)
 
-	// PubSub
-	// channelIdKey := fmt.Sprintf("%s.channelId", strings.Trim(channel, "#"))
-	// channelId := viper.GetString(channelIdKey)
-	// pubSub := twitch.NewPubSubClient(channelId, password)
-	// defer pubSub.Close()
-
-	// err = pubSub.Connect("wss", "pubsub-edge.twitch.tv")
-	// if err != nil {
-	// log.Fatalf(err.Error())
-	// }
-
-	// go pubSub.Start()
-
-	// if err := chatBot.RegisterInboundPlugin(pubSub); err != nil {
-	// log.Fatalf("FATAL: failed to register PubSub: %v", err)
-	// }
-	/// Plugin Registration END ///
-
+	// Feature Toggles
 	if enableCommands || enableAll {
 		chatBot.HandleCommands()
 	}
@@ -137,7 +118,6 @@ func main() {
 		ledger.Add("nightbot")
 		ledger.Add("ranaebot")
 		ledger.Add("soundalerts")
-		ledger.Add(nick)
 		ledger.Add(strings.TrimPrefix(channel, "#")) // Prevent greeting the broadcaster
 
 		// Greeter config
