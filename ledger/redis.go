@@ -12,7 +12,7 @@ type RedisLedger struct {
 	expireTimeInSeconds int64
 }
 
-func NewRedisLedger(host, port string, keyExpirationTime int64) (RedisLedger, error) {
+func NewRedisLedger(host, port string, keyExpirationSeconds int64) (RedisLedger, error) {
 	pool, err := radix.NewPool("tcp", fmt.Sprintf("%s:%s", host, port), 10)
 	if err != nil {
 		return RedisLedger{}, err
@@ -20,10 +20,36 @@ func NewRedisLedger(host, port string, keyExpirationTime int64) (RedisLedger, er
 
 	return RedisLedger{
 		pool:                pool,
-		expireTimeInSeconds: keyExpirationTime,
+		expireTimeInSeconds: keyExpirationSeconds,
 	}, nil
 }
 
+// Get the value at the specified key, if it exists
+func (l *RedisLedger) Get(key string) (string, error) {
+	var result string
+	cmd := radix.Cmd(result, "GET", key)
+
+	if err := l.pool.Do(cmd); err != nil {
+		log.Printf("ERROR: call GET - %s", err)
+		return "", err
+	}
+
+	return result, nil
+}
+
+// Put a value to the Redis store
+func (l *RedisLedger) Put(key, value string) error {
+	cmd := radix.FlatCmd(nil, "SET", key, value, "EX", l.expireTimeInSeconds)
+
+	if err := l.pool.Do(cmd); err != nil {
+		log.Printf("ERROR: call SET - %s", err)
+		return err
+	}
+
+	return nil
+}
+
+// Check if the given key exists in the Redis store
 func (l *RedisLedger) Absent(key string) bool {
 	var res int
 	err := l.pool.Do(radix.Cmd(&res, "EXISTS", key))
@@ -33,15 +59,4 @@ func (l *RedisLedger) Absent(key string) bool {
 	}
 
 	return res == 0
-}
-
-func (l *RedisLedger) Add(key string) error {
-	cmd := radix.FlatCmd(nil, "SET", key, 1, "EX", l.expireTimeInSeconds)
-
-	if err := l.pool.Do(cmd); err != nil {
-		log.Printf("ERROR: call SET - %s", err)
-		return err
-	}
-
-	return nil
 }
