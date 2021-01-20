@@ -18,11 +18,13 @@ func New() *server {
 }
 
 func (s *server) routes() {
-	s.router.HandleFunc("/subs/last", s.lastSubView())
+	// TODO pull from config
+	baseUrl := "http://localhost:8080"
+
 	s.router.HandleFunc("/api/subs/last", s.fetchLastSub())
+	s.router.HandleFunc("/subs/last", s.lastSubView(baseUrl+"/api/subs/last"))
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(w, r)
-
 }
