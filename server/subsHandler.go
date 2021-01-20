@@ -23,6 +23,7 @@ func (s *server) fetchLastSub() http.HandlerFunc {
 		Months int    `json:"months"`
 	}
 
+	// TODO hook into Metrics Store
 	return func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(response{
 			Name:   fmt.Sprintf("%d", time.Now().Unix()),
@@ -32,7 +33,7 @@ func (s *server) fetchLastSub() http.HandlerFunc {
 }
 
 // lastSubView returns the refreshing HTML page to grab the last Subscriber
-func (s *server) lastSubView() http.HandlerFunc {
+func (s *server) lastSubView(apiEndpoint string) http.HandlerFunc {
 	var (
 		onlyOnce sync.Once
 		tmpl     *template.Template = template.New("lastSubsTemplate")
@@ -41,6 +42,7 @@ func (s *server) lastSubView() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		onlyOnce.Do(func() {
+			// TODO can this template be part of a Base template somewhere?
 			tmpl, err = tmpl.Parse(`
 				<html lang="en">
 				<head></head>
@@ -68,7 +70,7 @@ func (s *server) lastSubView() http.HandlerFunc {
 		}
 
 		data := RefreshingView{
-			ApiEndpoint: "http://localhost:8080/api/subs/last",
+			ApiEndpoint: apiEndpoint,
 		}
 		tmpl.Execute(w, data)
 	}
