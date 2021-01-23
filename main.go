@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"medgebot/bot"
+	"medgebot/config"
 	"medgebot/irc"
 	"medgebot/ledger"
 	"medgebot/secret"
@@ -21,9 +22,7 @@ func main() {
 
 	// CLI argument processing
 	var channel string
-	var nick string
-	var ledgerType string
-	var secretStoreType string
+	var configPath string
 	var enableAll bool
 	var enableGreeter bool
 	var enableCommands bool
@@ -32,9 +31,7 @@ func main() {
 	var enableSubsMessage bool
 
 	flag.StringVar(&channel, "channel", "", "Channel name, without the #, to join")
-	flag.StringVar(&nick, "nick", "", "Nickname to join Chat with")
-	flag.StringVar(&ledgerType, "ledger", ledger.REDIS, fmt.Sprintf("Ledger type string. Options: %s, %s, %s", ledger.REDIS, ledger.FILE, ledger.MEM))
-	flag.StringVar(&secretStoreType, "store", secret.VAULT, fmt.Sprintf("Secret Store type string. Options: %s, %s", secret.VAULT, secret.ENV))
+	flag.StringVar(&configPath, "config", ".", "Path to the config.yaml file. Default: .")
 
 	flag.BoolVar(&enableAll, "all", false, "Enable all features")
 	flag.BoolVar(&enableGreeter, "greeter", false, "Enable the auto-greeter")
@@ -45,23 +42,15 @@ func main() {
 
 	flag.Parse()
 
+	conf := config.New(channel, configPath)
+	ledgerType := conf.Ledger()
+	secretStoreType := conf.SecretStore()
+
 	// Flag error handling
 	if strings.HasPrefix(channel, "#") {
 		log.Fatalln("FATAL: channel cannot start with a #")
 	}
 	channel = fmt.Sprintf("#%s", channel)
-
-	if nick == "" {
-		log.Fatalln("FATAL: nick empty")
-	}
-
-	// Initialize configuration and read from config.yaml
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("FATAL: read config.yaml - %v", err)
-	}
 
 	// Initialize desired state for the bot
 	chatBot := bot.New()
@@ -80,7 +69,7 @@ func main() {
 
 	// IRC
 	ircConfig := irc.Config{
-		Nick:     nick,
+		Nick:     conf.Nick(),
 		Password: fmt.Sprintf("oauth:%s", password),
 		Channel:  channel,
 	}
@@ -104,6 +93,7 @@ func main() {
 		chatBot.HandleCommands()
 	}
 
+	// if config.greeterEnabled() {
 	if enableGreeter || enableAll {
 		// Ledger for the auto greeter
 		// TODO get from config
