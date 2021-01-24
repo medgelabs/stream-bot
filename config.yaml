@@ -5,12 +5,15 @@ medgelabs:
   ledger: file
   greeter:
     enabled: true
+    ledger:
+      expirationTime: 43200 # 12 hours
     messageFormat: "Welcome to the lab, @{{.Sender}}!"
   channelPoints:
     enabled: false
     messageFormat: "Thanks for the research @{{.Sender}}!"
-  raid:
+  raids:
     enabled: true
+    delaySeconds: 2
     messageFormat: "!so @{{.Sender}}"
   bits:
     enabled: true
@@ -24,13 +27,20 @@ medgelabs:
 
 sorceryandsarcasm:
   channelId: 66490190
-  raid:
+  nick: medgelabs
+  secretStore: env
+  ledger: file
+  raids:
     enabled: true
     delaySeconds: 2
     messageFormat: "!so @{{.Sender}}"
+
 spookyghostmachine:
   channelId: 119432399
+  nick: medgelabs
+  secretStore: env
+  ledger: file
   greeter:
     messageFormat: "@{{.Sender}} spooky127Hype"
-  raid:
+  raids:
     messageFormat: "!so @{{.Sender}}"

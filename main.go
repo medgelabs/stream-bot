@@ -14,8 +14,6 @@ import (
 	"net/http"
 	"strings"
 	"text/template"
-
-	"github.com/spf13/viper"
 )
 
 func main() {
@@ -24,33 +22,24 @@ func main() {
 	var channel string
 	var configPath string
 	var enableAll bool
-	var enableGreeter bool
-	var enableCommands bool
-	var enableRaidMessage bool
-	var enableBitsMessage bool
-	var enableSubsMessage bool
 
 	flag.StringVar(&channel, "channel", "", "Channel name, without the #, to join")
 	flag.StringVar(&configPath, "config", ".", "Path to the config.yaml file. Default: .")
-
 	flag.BoolVar(&enableAll, "all", false, "Enable all features")
-	flag.BoolVar(&enableGreeter, "greeter", false, "Enable the auto-greeter")
-	flag.BoolVar(&enableCommands, "commands", false, "Enable Command processing")
-	flag.BoolVar(&enableRaidMessage, "raids", false, "Enable Raid auto-shoutout")
-	flag.BoolVar(&enableBitsMessage, "bits", false, "Enable Bits auto-thanks")
-	flag.BoolVar(&enableSubsMessage, "subs", false, "Enable Subs auto-thanks")
-
 	flag.Parse()
 
-	conf := config.New(channel, configPath)
+	conf, err := config.New(channel, configPath)
+	if err != nil {
+		log.Fatalf("FATAL: init config - %v", err)
+	}
+
 	ledgerType := conf.Ledger()
 	secretStoreType := conf.SecretStore()
 
-	// Flag error handling
-	if strings.HasPrefix(channel, "#") {
-		log.Fatalln("FATAL: channel cannot start with a #")
+	// Channel should be prefixed with # by default. Add it if missing
+	if !strings.HasPrefix(channel, "#") {
+		channel = fmt.Sprintf("#%s", channel)
 	}
-	channel = fmt.Sprintf("#%s", channel)
 
 	// Initialize desired state for the bot
 	chatBot := bot.New()
@@ -89,15 +78,14 @@ func main() {
 	chatBot.SetChatClient(irc)
 
 	// Feature Toggles
-	if enableCommands || enableAll {
+	if conf.CommandsEnabled() || enableAll {
 		chatBot.HandleCommands()
 	}
 
 	// if config.greeterEnabled() {
-	if enableGreeter || enableAll {
+	if conf.GreeterEnabled() || enableAll {
 		// Ledger for the auto greeter
-		// TODO get from config
-		var expirationTime int64 = 1000 * 60 * 60 * 12 // 12 hours
+		expirationTime := conf.GreeterExpirationTime()
 		ledger, err := ledger.NewLedger(ledgerType, expirationTime)
 		if err != nil {
 			log.Fatalf("FATAL: create ledger - %v", err)
@@ -111,8 +99,7 @@ func main() {
 		ledger.Put(strings.TrimPrefix(channel, "#"), "") // Prevent greeting the broadcaster
 
 		// Greeter config
-		greetKey := fmt.Sprintf("%s.greeter.messageFormat", strings.Trim(channel, "#"))
-		greetMessageFormat := viper.GetString(greetKey)
+		greetMessageFormat := conf.GreetMessageFormat()
 		greetTempl, err := template.New("greeter").Parse(greetMessageFormat)
 		if err != nil {
 			log.Fatalf("FATAL: invalid Greeter message in config - %v", err)
@@ -121,13 +108,9 @@ func main() {
 		chatBot.RegisterGreeter(ledger, bot.NewHandlerTemplate(greetTempl))
 	}
 
-	if enableRaidMessage || enableAll {
-		raidKey := fmt.Sprintf("%s.raid.messageFormat", strings.Trim(channel, "#"))
-		raidMessageFormat := viper.GetString(raidKey)
-
-		viper.SetDefault("%s.raid.delaySeconds", 0)
-		raidDelayKey := fmt.Sprintf("%s.raid.delaySeconds", strings.Trim(channel, "#"))
-		raidDelay := viper.GetInt(raidDelayKey)
+	if conf.RaidsEnabled() || enableAll {
+		raidMessageFormat := conf.RaidsMessageFormat()
+		raidDelay := conf.RaidDelay()
 
 		raidTempl, err := template.New("raids").Parse(raidMessageFormat)
 		if err != nil {
@@ -137,9 +120,8 @@ func main() {
 			bot.NewHandlerTemplate(raidTempl), raidDelay)
 	}
 
-	if enableBitsMessage || enableAll {
-		bitsKey := fmt.Sprintf("%s.bits.messageFormat", strings.Trim(channel, "#"))
-		bitsMessageFormat := viper.GetString(bitsKey)
+	if conf.BitsEnabled() || enableAll {
+		bitsMessageFormat := conf.BitsMessageFormat()
 
 		bitsTempl, err := template.New("bits").Parse(bitsMessageFormat)
 		if err != nil {
@@ -150,16 +132,14 @@ func main() {
 			bot.NewHandlerTemplate(bitsTempl))
 	}
 
-	if enableSubsMessage || enableAll {
-		subsKey := fmt.Sprintf("%s.subs.messageFormat", strings.Trim(channel, "#"))
-		subsMessageFormat := viper.GetString(subsKey)
+	if conf.SubsEnabled() || enableAll {
+		subsMessageFormat := conf.SubsMessageFormat()
 		subsTempl, err := template.New("subs").Parse(subsMessageFormat)
 		if err != nil {
 			log.Fatalf("FATAL: invalid subs message in config - %v", err)
 		}
 
-		giftSubsKey := fmt.Sprintf("%s.giftsubs.messageFormat", strings.Trim(channel, "#"))
-		giftSubsMessageFormat := viper.GetString(giftSubsKey)
+		giftSubsMessageFormat := conf.GiftSubsMessageFormat()
 		giftSubsTempl, err := template.New("giftsubs").Parse(giftSubsMessageFormat)
 		if err != nil {
 			log.Fatalf("FATAL: invalid subs message in config - %v", err)
@@ -169,6 +149,7 @@ func main() {
 			bot.NewHandlerTemplate(subsTempl), bot.NewHandlerTemplate(giftSubsTempl))
 	}
 
+	// Start the Bot only after all handlers are loaded
 	if err := chatBot.Start(); err != nil {
 		log.Fatalf("FATAL: bot connect - %v", err)
 	}
