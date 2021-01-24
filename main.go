@@ -33,8 +33,11 @@ func main() {
 		log.Fatalf("FATAL: init config - %v", err)
 	}
 
+	// Ledger Type
 	ledgerType := conf.Ledger()
-	secretStoreType := conf.SecretStore()
+	if ledgerType == "" {
+		log.Fatalf("FATAL: config key - ledger not found / empty")
+	}
 
 	// Channel should be prefixed with # by default. Add it if missing
 	if !strings.HasPrefix(channel, "#") {
@@ -46,6 +49,11 @@ func main() {
 	chatBot.RegisterReadLogger()
 
 	// Initialize Secrets Store
+	secretStoreType := conf.SecretStore()
+	if secretStoreType == "" {
+		log.Fatalf("FATAL: config key - secretStore not found / empty")
+	}
+
 	store, err := secret.NewSecretStore(secretStoreType)
 	if err != nil {
 		log.Fatalf("FATAL: Create secret store - %v", err)
@@ -57,8 +65,13 @@ func main() {
 	}
 
 	// IRC
+	nick := conf.Nick()
+	if nick == "" {
+		log.Fatalf("FATAL: config key - nick not found / empty")
+	}
+
 	ircConfig := irc.Config{
-		Nick:     conf.Nick(),
+		Nick:     nick,
 		Password: fmt.Sprintf("oauth:%s", password),
 		Channel:  channel,
 	}

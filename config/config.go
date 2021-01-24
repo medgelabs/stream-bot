@@ -40,20 +40,12 @@ func New(channel string, configPath string) (Config, error) {
 // Nick returns the nickname to join IRC with
 func (c *Config) Nick() string {
 	nick := c.config.GetString(c.key("nick"))
-	if nick == "" {
-		log.Fatalf("FATAL: config key - nick not found / empty")
-	}
-
 	return nick
 }
 
 // Ledger returns the desired ledger type, which should match the ledger/ledgerFactory.go enum
 func (c *Config) Ledger() string {
 	ledger := c.config.GetString(c.key("ledger"))
-	if ledger == "" {
-		log.Fatalf("FATAL: config key - ledger not found / empty")
-	}
-
 	return ledger
 }
 
@@ -61,10 +53,6 @@ func (c *Config) Ledger() string {
 // secret/storeFactory.go enum
 func (c *Config) SecretStore() string {
 	secretStore := c.config.GetString(c.key("secretStore"))
-	if secretStore == "" {
-		log.Fatalf("FATAL: config key - secretStore not found / empty")
-	}
-
 	return secretStore
 }
 
