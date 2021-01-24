@@ -2,8 +2,10 @@ package secret
 
 import (
 	"fmt"
-	"os"
+	"medgebot/config"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 const (
@@ -11,18 +13,25 @@ const (
 	ENV   = "env"
 )
 
-func NewSecretStore(storeType string) (Store, error) {
+// NewSecretStore returns a SecretStore for the given type, or an error if an invalid type is passed
+func NewSecretStore(config config.Config) (Store, error) {
+	storeType := config.SecretStore()
+	if storeType == "" {
+		return nil, errors.New("config key secretStore not found / empty")
+	}
+
 	switch strings.ToLower(storeType) {
 	case VAULT:
-		vaultUrl := os.Getenv("VAULT_ADDR")
-		vaultToken := os.Getenv("VAULT_TOKEN")
+		vaultUrl := config.VaultAddress()
+		vaultToken := config.VaultToken()
 		store := NewVaultStore("secret/data/twitchToken")
 		err := store.Connect(vaultUrl, vaultToken)
 		return &store, err
 	case ENV:
-		store := NewEnvStore()
+		twitchToken := config.TwitchToken()
+		store := NewEnvStore(twitchToken)
 		return &store, nil
 	default:
-		return nil, fmt.Errorf("Invalid storeType " + storeType)
+		return nil, fmt.Errorf("Invalid storeType - %s. Valid values are: %s, %s", storeType, VAULT, ENV)
 	}
 }

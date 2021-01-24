@@ -6,7 +6,6 @@ interact with Twitch Chat.
 * Subscriptions, bit donations, and raid notifications are extracted from IRC messages
 * Commands are also extracted from IRC messages
 * All messages sent _FROM_ the bot _TO_ chat are done via IRC PRIVMSG commands
-* PubSub is used for Channel Point Redemptions at this time
 
 ## Build & Run
 
@@ -17,6 +16,12 @@ Linux and Mac have been tested. (Sorry Windows)
 
 The Bot is a CLI-based program and accepts CLI flags to configure behavior. Run the
 binary with the `-h` flag to see available options.
+
+TODO - convert some flags to yaml config
+
+### ENV Variables
+
+The following ENV variables are expected by the bot (also found in `config/env.go`)
 
 ## Secrets
 
@@ -29,8 +34,8 @@ are:
 
 ## config.yaml
 
-Configuration for the Bot can be defined in a `config.yaml` file found in the same directory as the binary /
-root of the project. Config is by channel, like so:
+Configuration for the Bot can be defined in a `config.yaml` file found in the same directory
+as the binary / root of the project. Config is by channel, like so:
 
 ```
 CHANNEL_NAME:
@@ -113,8 +118,7 @@ If enabled, and by setting the following `config.yaml` entry:
 
 ```
 CHANNEL_NAME:
-  emotes:
-    prefix: (YOUR EMOTE PREFIX HERE)
+  emotePrefix: (YOUR EMOTE PREFIX HERE)
 ```
 
 The bot will analyze messages for usages of emotes with the given prefix. A single
@@ -125,7 +129,6 @@ TODO - how are these accessed?
 
 ## TODO - QoL
 
-* Config without YAML file for more portability / quick-run?
 * Automated OAuth token
 
 ## IRC Messages
@@ -176,4 +179,11 @@ Raid:
 ```
 map[badge-info:founder/4 badges:vip/1,founder/0,bits-leader/3 color:#FF0000 display-name:RAIDER emotes: flags: id:05f87ef5-793e-424f-aa52-d10e96073925 login:RAIDER mod:0 msg-id:raid msg-param-displayName:RAIDER msg-param-login:RAIDER msg-param-profileImageURL:https://URL msg-param-viewerCount:4 room-id:66490190 subscriber:1 system-msg:4\sraiders\sfrom\sRAIDER\shave\sjoined! tmi-sent-ts:1607544051081 user-id:RAIDER_ID user-type:]
 <<< tmi.twitch.tv USERNOTICE #CHANNEL
+```
+
+Host:
+TODO - this was initiated by BTTV. Does Twitch do this?
+
+```
+jtv!jtv@jtv.tmi.twitch.tv PRIVMSG medgelabs :HOSTER is now hosting you.
 ```

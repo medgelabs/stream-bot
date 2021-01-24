@@ -50,7 +50,7 @@ func NewFileLedger(ledger *os.File, keyExpirationSeconds int64) (PersistableLedg
 	fieldSeparator := "|"
 
 	// To ensure we remove stale data, we rewrite state to the ledger
-	fileLedger := PersistableLedger{
+	pl := PersistableLedger{
 		ledger:         ledger,
 		persistent:     (ledger != nil),
 		cache:          cache,
@@ -59,22 +59,22 @@ func NewFileLedger(ledger *os.File, keyExpirationSeconds int64) (PersistableLedg
 		expiration:     keyExpirationSeconds,
 	}
 
-	if fileLedger.persistent {
-		fileLedger.rehydrate()
+	if pl.persistent {
+		pl.rehydrate()
 
 		// Setup cache flushing
-		fileLedger.flushCache()
+		pl.flushCache()
 		go func(ledger *PersistableLedger) {
 			for {
 				select {
 				case <-time.After(10 * time.Second):
-					fileLedger.flushCache()
+					pl.flushCache()
 				}
 			}
-		}(&fileLedger)
+		}(&pl)
 	}
 
-	return fileLedger, nil
+	return pl, nil
 }
 
 // Get the value at the given key. Returns error if key not found
@@ -122,6 +122,7 @@ func (l *PersistableLedger) line(key string, entry Entry) string {
 	buf.WriteString(key + l.fieldSeparator)
 	buf.WriteString(entry.value + l.fieldSeparator)
 	buf.WriteString(fmt.Sprintf("%d", entry.timestamp))
+	buf.WriteString(l.lineSeparator)
 	return buf.String()
 }
 
