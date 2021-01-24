@@ -122,6 +122,7 @@ func (l *PersistableLedger) line(key string, entry Entry) string {
 	buf.WriteString(key + l.fieldSeparator)
 	buf.WriteString(entry.value + l.fieldSeparator)
 	buf.WriteString(fmt.Sprintf("%d", entry.timestamp))
+	buf.WriteString(l.lineSeparator)
 	return buf.String()
 }
 
