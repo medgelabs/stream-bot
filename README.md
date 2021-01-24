@@ -180,3 +180,10 @@ Raid:
 map[badge-info:founder/4 badges:vip/1,founder/0,bits-leader/3 color:#FF0000 display-name:RAIDER emotes: flags: id:05f87ef5-793e-424f-aa52-d10e96073925 login:RAIDER mod:0 msg-id:raid msg-param-displayName:RAIDER msg-param-login:RAIDER msg-param-profileImageURL:https://URL msg-param-viewerCount:4 room-id:66490190 subscriber:1 system-msg:4\sraiders\sfrom\sRAIDER\shave\sjoined! tmi-sent-ts:1607544051081 user-id:RAIDER_ID user-type:]
 <<< tmi.twitch.tv USERNOTICE #CHANNEL
 ```
+
+Host:
+TODO - this was initiated by BTTV. Does Twitch do this?
+
+```
+jtv!jtv@jtv.tmi.twitch.tv PRIVMSG medgelabs :HOSTER is now hosting you.
+```
