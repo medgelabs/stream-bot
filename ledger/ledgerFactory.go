@@ -3,8 +3,11 @@ package ledger
 import (
 	"fmt"
 	"log"
+	"medgebot/config"
 	"os"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // Acceptable types of Ledgers
@@ -14,11 +17,18 @@ const (
 	MEM   = "mem"
 )
 
-func NewLedger(ledgerType string, keyExpirationTime int64) (Ledger, error) {
+func NewLedger(config config.Config) (Ledger, error) {
+	ledgerType := config.Ledger()
+	if ledgerType == "" {
+		return nil, errors.New("config key - ledger not found / empty")
+	}
+
+	keyExpirationTime := config.LedgerExpirationTime()
+
 	switch strings.ToLower(ledgerType) {
 	case REDIS:
-		redisHost := os.Getenv("REDIS_HOST")
-		redisPort := os.Getenv("REDIS_PORT")
+		redisHost := config.RedisHost()
+		redisPort := config.RedisPort()
 		redis, err := NewRedisLedger(redisHost, redisPort, keyExpirationTime)
 		return &redis, err
 	case FILE:
@@ -36,7 +46,7 @@ func NewLedger(ledgerType string, keyExpirationTime int64) (Ledger, error) {
 		mem, _ := NewInMemoryLedger(keyExpirationTime)
 		return &mem, nil
 	default:
-		return nil, fmt.Errorf("Invalid ledgerType " + ledgerType)
+		return nil, fmt.Errorf("Invalid ledgerType - %s. Valid values are: %s, %s, %s", ledgerType, REDIS, FILE, MEM)
 	}
 }
 

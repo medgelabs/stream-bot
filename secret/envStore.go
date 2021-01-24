@@ -2,7 +2,6 @@ package secret
 
 import (
 	"fmt"
-	"os"
 )
 
 // EnvStore is an in-memory secrets store that grabs secrets from
@@ -11,9 +10,7 @@ type EnvStore struct {
 	twitchToken string
 }
 
-func NewEnvStore() EnvStore {
-	twitchToken := os.Getenv("TWITCH_TOKEN")
-
+func NewEnvStore(twitchToken string) EnvStore {
 	return EnvStore{
 		twitchToken: twitchToken,
 	}

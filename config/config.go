@@ -2,13 +2,11 @@ package config
 
 import (
 	"fmt"
-	"log"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 )
-
-// TODO required key functionality?
 
 // Config serves as the centralized place for configuration coming
 // from various sources, i.e config.yaml, ENV vars, etc
@@ -49,11 +47,36 @@ func (c *Config) Ledger() string {
 	return ledger
 }
 
+// RedisHost if the Ledger type is REDIS
+func (c *Config) RedisHost() string {
+	return os.Getenv("REDIS_HOST")
+}
+
+// RedisPort if the Ledger type is REDIS
+func (c *Config) RedisPort() string {
+	return os.Getenv("REDIS_PORT")
+}
+
 // SecretStore returns the desired secret store type, which should match the
 // secret/storeFactory.go enum
 func (c *Config) SecretStore() string {
 	secretStore := c.config.GetString(c.key("secretStore"))
 	return secretStore
+}
+
+// VaultAddress (host + port) if Store type is VAULT
+func (c *Config) VaultAddress() string {
+	return os.Getenv("VAULT_ADDR")
+}
+
+// VaultToken (secret) if Store type is VAULT
+func (c *Config) VaultToken() string {
+	return os.Getenv("VAULT_TOKEN")
+}
+
+// TwitchToken if Store type is ENV
+func (c *Config) TwitchToken() string {
+	return os.Getenv("TWITCH_TOKEN")
 }
 
 // Feature Flags - built as opt-in
@@ -64,8 +87,8 @@ func (c *Config) GreeterEnabled() bool {
 	return flagValue
 }
 
-// GreeterExpirationTime grabs the expiration time for the Greeter ledger
-func (c *Config) GreeterExpirationTime() int64 {
+// LedgerExpirationTime grabs the expiration time for the Greeter ledger
+func (c *Config) LedgerExpirationTime() int64 {
 	value := c.config.GetInt64(c.key("greeter.ledger.expirationTime"))
 	return value
 }
