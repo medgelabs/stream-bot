@@ -100,8 +100,6 @@ func main() {
 			commands = append(commands, cmd)
 		}
 
-		fmt.Printf("Bot commands: %v", commands)
-
 		chatBot.HandleCommands(commands)
 	}
 
