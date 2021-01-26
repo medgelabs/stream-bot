@@ -4,22 +4,30 @@ import (
 	"strings"
 )
 
-func (bot *Bot) HandleCommands() {
+// Command represents a known Command from Config that the Bot can respond to
+type Command struct {
+	Prefix          string
+	MessageTemplate HandlerTemplate
+}
+
+// Return the interpolated Message for the given command
+func (c *Command) ParsedMessage(evt Event) string {
+	return c.MessageTemplate.Parse(evt)
+}
+
+func (bot *Bot) HandleCommands(knownCommands []Command) {
 	bot.RegisterHandler(
 		NewHandler(func(evt Event) {
 			if evt.IsChatEvent() {
 				contents := evt.Message
 
-				// Obligatory Hello, World (also used in Unit Test)
-				if strings.HasPrefix(contents, "!hello") {
-					bot.SendMessage("WORLD")
+				for _, command := range knownCommands {
+					if strings.HasPrefix(contents, command.Prefix) {
+						bot.SendMessage(command.ParsedMessage(evt))
+					}
 				}
 
-				// Sorcery Shoutout
-				if strings.HasPrefix(contents, "!sorcery") {
-					bot.SendMessage("!so @SorceryAndSarcasm")
-				}
-
+				// Special case because fitting this in config.yaml is :spooky127Concern:
 				// Fjoell Feature Request: ASCII Cthulu
 				if strings.HasPrefix(contents, "!cthulhu") {
 					msg := `⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿

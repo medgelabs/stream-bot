@@ -105,6 +105,19 @@ func (c *Config) CommandsEnabled() bool {
 	return flagValue
 }
 
+// KnownCommands returns a slice of map[prefix]message pairs, to be parsed elsewhere,
+// that represent commands the Bot responds to
+type KnownCommand struct {
+	Prefix  string `mapstructure:"prefix"`
+	Message string `mapstructure:"message"`
+}
+
+func (c *Config) KnownCommands() []KnownCommand {
+	var commands []KnownCommand
+	c.config.UnmarshalKey(c.key("commands.known"), &commands)
+	return commands
+}
+
 // RaidsEnabled checks the Raids feature flag
 func (c *Config) RaidsEnabled() bool {
 	flagValue := c.config.GetBool(c.key("raids.enabled"))

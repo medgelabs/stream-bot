@@ -81,7 +81,26 @@ func main() {
 
 	// Feature Toggles
 	if conf.CommandsEnabled() || enableAll {
-		chatBot.HandleCommands()
+		cmds := conf.KnownCommands()
+		var commands []bot.Command
+
+		fmt.Println(cmds)
+
+		for _, cmd := range cmds {
+			cmdTemplate, err := template.New(cmd.Prefix).Parse(cmd.Message)
+			if err != nil {
+				log.Fatalf("FATAL: parse known Command [%+v] - %v", cmd, err)
+			}
+
+			cmd := bot.Command{
+				Prefix:          cmd.Prefix,
+				MessageTemplate: bot.NewHandlerTemplate(cmdTemplate),
+			}
+
+			commands = append(commands, cmd)
+		}
+
+		chatBot.HandleCommands(commands)
 	}
 
 	// if config.greeterEnabled() {
