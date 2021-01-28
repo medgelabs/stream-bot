@@ -27,8 +27,16 @@ medgelabs:
   commands:
     enabled: true
     known:
-      - prefix: !lurk
+      - prefix: "!hello"
+        message: "WORLD"
+      - prefix: "!lurk"
         message: "{{.Sender}} went to hang out with the Lab Bots!"
+      - prefix: "!sorcery"
+        message: "!so @SorceryAndSarcasm"
+      - prefix: "!spooky"
+        message: "!so @SpookyGhostMachine"
+      # - prefix:
+        # message:
 
 sorceryandsarcasm:
   channelId: 66490190
