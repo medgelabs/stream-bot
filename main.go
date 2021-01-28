@@ -84,8 +84,6 @@ func main() {
 		cmds := conf.KnownCommands()
 		var commands []bot.Command
 
-		fmt.Println(cmds)
-
 		for _, cmd := range cmds {
 			cmdTemplate, err := template.New(cmd.Prefix).Parse(cmd.Message)
 			if err != nil {

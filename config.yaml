@@ -24,6 +24,11 @@ medgelabs:
   giftsubs:
     enabled: true
     messageFormat: "@{{.Sender}} loaned their lab coat to @{{.Recipient}}!"
+  commands:
+    enabled: true
+    known:
+      - prefix: !lurk
+        message: "{{.Sender}} went to hang out with the Lab Bots!"
 
 sorceryandsarcasm:
   channelId: 66490190
