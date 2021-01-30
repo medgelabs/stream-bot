@@ -30,7 +30,7 @@ func main() {
 
 	conf, err := config.New(channel, configPath)
 	if err != nil {
-		log.Panic("init config", err)
+		log.Fatal("init config", err)
 	}
 
 	// Channel should be prefixed with # by default. Add it if missing
@@ -45,18 +45,18 @@ func main() {
 	// Initialize Secrets Store
 	store, err := secret.NewSecretStore(conf)
 	if err != nil {
-		log.Panic("Create secret store", err)
+		log.Fatal("Create secret store", err)
 	}
 
 	password, err := store.TwitchToken()
 	if err != nil {
-		log.Panic("Get Twitch Token from store", err)
+		log.Fatal("Get Twitch Token from store", err)
 	}
 
 	// IRC
 	nick := conf.Nick()
 	if nick == "" {
-		log.Panic("config key - nick not found / empty", nil)
+		log.Fatal("config key - nick not found / empty", nil)
 	}
 
 	ircConfig := irc.Config{
@@ -72,7 +72,7 @@ func main() {
 
 	err = irc.Start(ircConfig)
 	if err != nil {
-		log.Panic("start IRC", err)
+		log.Fatal("start IRC", err)
 	}
 
 	// IRC is both a Client and a ChatClient
@@ -87,7 +87,7 @@ func main() {
 		for _, cmd := range cmds {
 			cmdTemplate, err := template.New(cmd.Prefix).Parse(cmd.Message)
 			if err != nil {
-				log.Panic(fmt.Sprintf("parse known Command [%+v]", cmd), err)
+				log.Fatal(fmt.Sprintf("parse known Command [%+v]", cmd), err)
 			}
 
 			cmd := bot.Command{
@@ -106,7 +106,7 @@ func main() {
 		// Ledger for the auto greeter
 		ledger, err := ledger.NewLedger(conf)
 		if err != nil {
-			log.Panic("create ledger", err)
+			log.Fatal("create ledger", err)
 		}
 
 		// pre-seed names we don't want greeted
@@ -120,7 +120,7 @@ func main() {
 		greetMessageFormat := conf.GreetMessageFormat()
 		greetTempl, err := template.New("greeter").Parse(greetMessageFormat)
 		if err != nil {
-			log.Panic("invalid Greeter message in config", err)
+			log.Fatal("invalid Greeter message in config", err)
 		}
 
 		chatBot.RegisterGreeter(ledger, bot.NewHandlerTemplate(greetTempl))
@@ -132,7 +132,7 @@ func main() {
 
 		raidTempl, err := template.New("raids").Parse(raidMessageFormat)
 		if err != nil {
-			log.Panic("invalid raid message in config", err)
+			log.Fatal("invalid raid message in config", err)
 		}
 		chatBot.RegisterRaidHandler(
 			bot.NewHandlerTemplate(raidTempl), raidDelay)
@@ -143,7 +143,7 @@ func main() {
 
 		bitsTempl, err := template.New("bits").Parse(bitsMessageFormat)
 		if err != nil {
-			log.Panic("invalid bits message in config", err)
+			log.Fatal("invalid bits message in config", err)
 		}
 
 		chatBot.RegisterBitsHandler(
@@ -154,13 +154,13 @@ func main() {
 		subsMessageFormat := conf.SubsMessageFormat()
 		subsTempl, err := template.New("subs").Parse(subsMessageFormat)
 		if err != nil {
-			log.Panic("invalid subs message in config", err)
+			log.Fatal("invalid subs message in config", err)
 		}
 
 		giftSubsMessageFormat := conf.GiftSubsMessageFormat()
 		giftSubsTempl, err := template.New("giftsubs").Parse(giftSubsMessageFormat)
 		if err != nil {
-			log.Panic("invalid subs message in config", err)
+			log.Fatal("invalid subs message in config", err)
 		}
 
 		chatBot.RegisterSubsHandler(
@@ -169,12 +169,12 @@ func main() {
 
 	// Start the Bot only after all handlers are loaded
 	if err := chatBot.Start(); err != nil {
-		log.Panic("bot connect", err)
+		log.Fatal("bot connect", err)
 	}
 
 	// Start HTTP server
 	srv := server.New()
 	if err := http.ListenAndServe(":8080", srv); err != nil {
-		log.Panic("start HTTP server", err)
+		log.Fatal("start HTTP server", err)
 	}
 }
