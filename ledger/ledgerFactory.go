@@ -12,9 +12,8 @@ import (
 
 // Acceptable types of Ledgers
 const (
-	REDIS = "redis"
-	FILE  = "file"
-	MEM   = "mem"
+	FILE = "file"
+	MEM  = "mem"
 )
 
 func NewLedger(config config.Config) (Ledger, error) {
@@ -26,11 +25,6 @@ func NewLedger(config config.Config) (Ledger, error) {
 	keyExpirationTime := config.LedgerExpirationTime()
 
 	switch strings.ToLower(ledgerType) {
-	case REDIS:
-		redisHost := config.RedisHost()
-		redisPort := config.RedisPort()
-		redis, err := NewRedisLedger(redisHost, redisPort, keyExpirationTime)
-		return &redis, err
 	case FILE:
 		file, err := ledgerFile("ledger.txt")
 		if err != nil {
@@ -46,7 +40,7 @@ func NewLedger(config config.Config) (Ledger, error) {
 		mem, _ := NewInMemoryLedger(keyExpirationTime)
 		return &mem, nil
 	default:
-		return nil, fmt.Errorf("Invalid ledgerType - %s. Valid values are: %s, %s, %s", ledgerType, REDIS, FILE, MEM)
+		return nil, fmt.Errorf("Invalid ledgerType - %s. Valid values are: %v", ledgerType, []string{FILE, MEM})
 	}
 }
 

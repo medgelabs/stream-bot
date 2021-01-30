@@ -18,5 +18,8 @@ WORKDIR /app
 COPY --from=builder /usr/src/app/medgebot /app/
 COPY --from=builder /usr/src/app/config.yaml /app/
 
+# Admin / API
+EXPOSE 8080
+
 ENV CHANNEL="medgelabs"
 CMD /app/medgebot -channel $CHANNEL -all
