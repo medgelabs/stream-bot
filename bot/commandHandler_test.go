@@ -1,6 +1,9 @@
 package bot
 
-import "testing"
+import (
+	"medgebot/bot/bottest"
+	"testing"
+)
 
 // Bits handler through the Bot
 func TestCommandHandler(t *testing.T) {
@@ -10,7 +13,12 @@ func TestCommandHandler(t *testing.T) {
 	bot.SetChatClient(checker)
 
 	// Initialize Handler
-	bot.HandleCommands()
+	bot.HandleCommands([]Command{
+		{
+			Prefix:          "!hello",
+			MessageTemplate: NewHandlerTemplate(bottest.MakeTemplate("hello", "WORLD")),
+		},
+	})
 
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()
@@ -35,7 +43,12 @@ func TestCommandHandlerIgnoresRegularChatMessages(t *testing.T) {
 	bot.SetChatClient(checker)
 
 	// Initialize Handler
-	bot.HandleCommands()
+	bot.HandleCommands([]Command{
+		{
+			Prefix:          "!hello",
+			MessageTemplate: NewHandlerTemplate(bottest.MakeTemplate("hello", "WORLD")),
+		},
+	})
 
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()
@@ -61,8 +74,7 @@ func TestCommandHandlerIgnoresInvalidEvents(t *testing.T) {
 	bot.SetChatClient(checker)
 
 	// Initialize Handler
-	bot.HandleCommands()
-
+	bot.HandleCommands([]Command{})
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()
 
