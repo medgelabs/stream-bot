@@ -27,6 +27,18 @@ func (bot *Bot) HandleCommands(knownCommands []Command) {
 					}
 				}
 
+				// Derived commands lists
+				if strings.HasPrefix(contents, "!commands") {
+					var buf strings.Builder
+					buf.WriteString("Commands: ")
+					for _, command := range knownCommands {
+						buf.WriteString(command.Prefix)
+						buf.WriteString(" ")
+					}
+
+					bot.SendMessage(buf.String())
+				}
+
 				// Special case because fitting this in config.yaml is :spooky127Concern:
 				// Fjoell Feature Request: ASCII Cthulu
 				if strings.HasPrefix(contents, "!cthulhu") {
