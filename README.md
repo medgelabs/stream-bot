@@ -28,8 +28,6 @@ The following ENV variables are expected by the bot (also found in `config/env.g
 A `Secret Store` provides secrets to the app (`/secrets` package). Currently supported options
 are:
 
-* Hashicorp Vault (available via `docker-compose up vault`)
-  * Secrets expected: `secrets/twitchToken`
 * Environment variables: `TWITCH_TOKEN`
 
 ## config.yaml
