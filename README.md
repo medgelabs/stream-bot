@@ -1,7 +1,6 @@
 # Stream Bot
 
-Twitch ChatBot built on stream! Utilizes Twitch IRC and Twitch PubSub APIs to
-interact with Twitch Chat.
+Twitch ChatBot built on stream! Utilizes Twitch IRC to interact with Twitch Chat.
 
 * Subscriptions, bit donations, and raid notifications are extracted from IRC messages
 * Commands are also extracted from IRC messages
@@ -14,14 +13,7 @@ Linux and Mac have been tested. (Sorry Windows)
 
 ## CLI
 
-The Bot is a CLI-based program and accepts CLI flags to configure behavior. Run the
-binary with the `-h` flag to see available options.
 
-TODO - convert some flags to yaml config
-
-### ENV Variables
-
-The following ENV variables are expected by the bot (also found in `config/env.go`)
 
 ## Secrets
 
