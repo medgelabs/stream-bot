@@ -15,4 +15,6 @@ jobs:
         go-version: 1.14
 
     - name: Test
-      run: go test -v ./...
+      run: go test -v ./... -coverprofile out.prof
+    - name: Coverage
+      run: go tool cover -func ./out.prof
