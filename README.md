@@ -13,8 +13,6 @@ Linux and Mac have been tested. (Sorry Windows)
 
 ## CLI
 
-
-
 ## Secrets
 
 A `Secret Store` provides secrets to the app (`/secrets` package). Currently supported options

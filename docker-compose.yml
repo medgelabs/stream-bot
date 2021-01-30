@@ -4,18 +4,7 @@ services:
 
   bot:
     build: .
-    environment:
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-    depends_on:
-      - redis
-
-  redis:
-    image: redis:alpine
-    command: redis-server --appendonly yes
-    restart: always
-    hostname: redis
-    ports:
-      - "6379:6379"
     volumes:
-      - "./redis-data:/data"
+      - "./ledger-data:/usr/src/app/ledger-data"
+    ports:
+      - "8080:8080"
