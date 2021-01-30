@@ -15,7 +15,7 @@ func TestBitsHandler(t *testing.T) {
 	// Initialize Bits Handler
 	tmpl := bottest.MakeTemplate("testBits", "Thanks for the {{.Amount}} bits {{.Sender}}")
 	bot.RegisterBitsHandler(HandlerTemplate{
-		templ: tmpl,
+		template: tmpl,
 	})
 
 	// This must happen after Handler registration, else data race occurs
@@ -43,7 +43,7 @@ func TestBitsHandlerIgnoresInvalidEvents(t *testing.T) {
 	// Initialize Bits Handler
 	tmpl := bottest.MakeTemplate("testBits", "Thanks for the {{.Amount}} bits {{.Sender}}")
 	bot.RegisterBitsHandler(HandlerTemplate{
-		templ: tmpl,
+		template: tmpl,
 	})
 
 	// This must happen after Handler registration, else data race occurs

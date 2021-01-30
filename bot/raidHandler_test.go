@@ -15,7 +15,7 @@ func TestRaidHandler(t *testing.T) {
 	// Initialize Handler
 	tmpl := bottest.MakeTemplate("testRaid", "Welcome {{.Sender}}'s {{.Amount}} raiders!")
 	bot.RegisterRaidHandler(HandlerTemplate{
-		templ: tmpl,
+		template: tmpl,
 	}, 1)
 
 	// This must happen after Handler registration, else data race occurs
@@ -43,7 +43,7 @@ func TestRaidHandlerIgnoresInvalidEvents(t *testing.T) {
 	// Initialize Handler
 	tmpl := bottest.MakeTemplate("testRaid", "Welcome {{.Sender}}'s {{.Amount}} raiders!")
 	bot.RegisterRaidHandler(HandlerTemplate{
-		templ: tmpl,
+		template: tmpl,
 	}, 0)
 
 	// This must happen after Handler registration, else data race occurs
