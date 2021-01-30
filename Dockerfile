@@ -19,5 +19,4 @@ COPY --from=builder /usr/src/app/medgebot /app/
 COPY --from=builder /usr/src/app/config.yaml /app/
 
 ENV CHANNEL="medgelabs"
-ENV NICK="medgelabs"
-CMD /app/medgebot -channel $CHANNEL -nick $NICK
+CMD /app/medgebot -channel $CHANNEL -all

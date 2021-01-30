@@ -7,11 +7,8 @@ services:
     environment:
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      VAULT_ADDR: http://vault:8200
-      VAULT_TOKEN: ${VAULT_TOKEN}
     depends_on:
       - redis
-      - vault
 
   redis:
     image: redis:alpine
@@ -22,13 +19,3 @@ services:
       - "6379:6379"
     volumes:
       - "./redis-data:/data"
-
-  vault:
-    image: vault
-    cap_add:
-      - IPC_LOCK
-    ports:
-      - "8200:8200"
-    volumes:
-      - ./vault/file:/vault/file
-      # - ./vault/config:/vault/config
