@@ -30,7 +30,7 @@ medgelabs:
       - prefix: "!hello"
         message: "WORLD"
       - prefix: "!lurk"
-        message: "{{.Sender}} went to hang out with the Lab Bots!"
+        message: "@{{.Sender}} went to hang out with the Lab Bots!"
       - prefix: "!sorcery"
         message: "!so @SorceryAndSarcasm"
       - prefix: "!spooky"
