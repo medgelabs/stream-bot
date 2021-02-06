@@ -2,12 +2,10 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
 	log "medgebot/logger"
 	"net/http"
 	"sync"
-	"time"
 )
 
 // RefreshingView represents a view that polls for data to be interpolated
@@ -17,23 +15,24 @@ type RefreshingView struct {
 }
 
 // fetchLastSub for the lastSubView
-func (s *server) fetchLastSub() http.HandlerFunc {
+func (s *Server) fetchLastSub() http.HandlerFunc {
 	type response struct {
 		Name   string `json:"name"`
 		Months int    `json:"months"`
 	}
 
-	// TODO hook into Metrics Store
 	return func(w http.ResponseWriter, r *http.Request) {
+		lastSub, _ := s.viewerMetricsStore.Fetch("lastSub")
+
 		json.NewEncoder(w).Encode(response{
-			Name:   fmt.Sprintf("%d", time.Now().Unix()),
-			Months: 3,
+			Name:   lastSub.Name,
+			Months: lastSub.Amount,
 		})
 	}
 }
 
 // lastSubView returns the refreshing HTML page to grab the last Subscriber
-func (s *server) lastSubView(apiEndpoint string) http.HandlerFunc {
+func (s *Server) lastSubView(apiEndpoint string) http.HandlerFunc {
 	var (
 		onlyOnce sync.Once
 		tmpl     *template.Template = template.New("lastSubsTemplate")
