@@ -3,15 +3,17 @@ package irc
 import (
 	"fmt"
 	"io"
-	"log"
 	"medgebot/bot"
+	log "medgebot/logger"
 	"sync"
 
 	"github.com/pkg/errors"
 )
 
 const (
-	MAX_MSG_SIZE = 1024 // bytes
+	// MaxMessageSize defines the maximum size of an IRC message that can be received.
+	// This is used to size the message buffer slice for the io.Read method
+	MaxMessageSize = 1024 // bytes
 )
 
 // Irc client
@@ -58,7 +60,7 @@ func (irc *Irc) Start(config Config) error {
 	go func() {
 		for {
 			if err := irc.read(); err != nil {
-				log.Printf("ERROR: irc read - %v", err)
+				log.Error("irc read", err)
 				break
 			}
 		}
@@ -77,13 +79,13 @@ func (irc *Irc) Start(config Config) error {
 // Authenticate connects to the IRC stream with the given nick and password
 func (irc *Irc) Authenticate(nick, password string) error {
 	if err := irc.sendPass(password); err != nil {
-		log.Printf("ERROR: send PASS failed: %s", err)
+		log.Error("send PASS failed", err)
 		return err
 	}
-	log.Println("< PASS ***")
+	log.Info("< PASS ***")
 
 	if err := irc.sendNick(nick); err != nil {
-		log.Printf("ERROR: send NICK failed: %s", err)
+		log.Error("send NICK failed", err)
 		return err
 	}
 
@@ -100,7 +102,7 @@ func (irc *Irc) Join(channel string) error {
 	return irc.write(joinCmd)
 }
 
-// Capability Request for IRC. DO NOT include the twitch.tv/ prefix
+// CapReq for IRC. DO NOT include the twitch.tv/ prefix
 func (irc *Irc) CapReq(capability string) error {
 	msg := Message{
 		Command:  "CAP REQ",
@@ -120,6 +122,7 @@ func (irc *Irc) PrivMsg(channel, message string) error {
 	return irc.write(msg)
 }
 
+// Close closes the IRC connection
 func (irc *Irc) Close() error {
 	return irc.conn.Close()
 }
@@ -132,7 +135,7 @@ func (irc *Irc) sendPong(body string) {
 	}
 
 	if err := irc.write(msg); err != nil {
-		log.Printf("ERROR: irc.send PONG - %v", err)
+		log.Error("irc.send PONG", err)
 	}
 }
 
@@ -158,21 +161,22 @@ func (irc *Irc) sendNick(nick string) error {
 
 // Read reads from the IRC stream, one line at a time
 func (irc *Irc) read() error {
-	buff := make([]byte, MAX_MSG_SIZE)
+	buff := make([]byte, MaxMessageSize)
 	len, err := irc.conn.Read(buff)
 	if err != nil {
 		return errors.Wrap(err, "ERROR: read irc")
 	}
 
 	if len == 0 {
-		log.Println("Empty message buffer")
+		log.Warn("Empty message buffer")
 		return errors.New("Empty message buffer")
 	}
 
 	// trace inbound IRC message
-	log.Println(string(buff))
 
-	msg := parseIrcLine(string(buff))
+	str := string(buff)
+	log.Info(str)
+	msg := parseIrcLine(str)
 
 	// Intercept for PING/PONG
 	if msg.Command == "PING" {
@@ -216,7 +220,7 @@ func (irc *Irc) read() error {
 			evt.Recipient = msg.GiftRecipient()
 			irc.sendEvent(evt)
 		default:
-			log.Printf("Unknown USERNOTICE: %s", msg.String())
+			log.Warn("Unknown USERNOTICE: " + msg.String())
 		}
 
 	default:
@@ -236,22 +240,26 @@ func (irc *Irc) write(message Message) error {
 	}
 
 	if message.Command != "PASS" && message.Command != "PONG" {
-		log.Printf("< %s", message)
+		log.Info(fmt.Sprintf("< %s", message))
 	}
 	return nil
 }
 
 // bot.ChatClient
+
+// Channel returns a channel for bot.Event used to send events to the IRC client
 func (irc *Irc) Channel() chan<- bot.Event {
 	return irc.inboundEvents
 }
 
 // bot.Client
+
+// SetDestination sets the outbound channel for bot.Events the IRC client will send to
 func (irc *Irc) SetDestination(outbound chan<- bot.Event) {
 	irc.outboundEvents = outbound
 }
 
-// Send Event to the bot
+// sendEvent abstracts the process to send events to the bot
 func (irc *Irc) sendEvent(evt bot.Event) {
 	irc.outboundEvents <- evt
 }
