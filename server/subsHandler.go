@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"log"
+	log "medgebot/logger"
 	"net/http"
 	"sync"
 	"time"
@@ -66,7 +66,7 @@ func (s *server) lastSubView(apiEndpoint string) http.HandlerFunc {
 		})
 
 		if err != nil {
-			log.Fatalf("FATAL: Last Subs template did not parse - %v", err)
+			log.Fatal("Last Subs template did not parse", err)
 		}
 
 		data := RefreshingView{
