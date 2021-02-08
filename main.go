@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"medgebot/bot"
+	"medgebot/bot/viewer"
 	"medgebot/config"
 	"medgebot/irc"
 	"medgebot/ledger"
@@ -173,7 +174,8 @@ func main() {
 	}
 
 	// Start HTTP server
-	srv := server.New()
+	viewerMetricStore := viewer.NewInMemoryStore()
+	srv := server.New(viewerMetricStore)
 	if err := http.ListenAndServe(":8080", srv); err != nil {
 		log.Fatal("start HTTP server", err)
 	}
