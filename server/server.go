@@ -1,30 +1,35 @@
 package server
 
 import (
+	"medgebot/bot/viewer"
 	"net/http"
 )
 
-type server struct {
-	router *http.ServeMux
+// Server REST API
+type Server struct {
+	router             *http.ServeMux
+	viewerMetricsStore viewer.MetricStore
 }
 
-func New() *server {
-	srv := &server{
-		router: http.NewServeMux(),
+// New returns a Server instance to be run with http.ListenAndServe()
+func New(metricStore viewer.MetricStore) *Server {
+	srv := &Server{
+		router:             http.NewServeMux(),
+		viewerMetricsStore: metricStore,
 	}
 
 	srv.routes()
 	return srv
 }
 
-func (s *server) routes() {
+func (s *Server) routes() {
 	// TODO pull from config
-	baseUrl := "http://localhost:8080"
+	baseURL := "http://localhost:8080"
 
 	s.router.HandleFunc("/api/subs/last", s.fetchLastSub())
-	s.router.HandleFunc("/subs/last", s.lastSubView(baseUrl+"/api/subs/last"))
+	s.router.HandleFunc("/subs/last", s.lastSubView(baseURL+"/api/subs/last"))
 }
 
-func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(w, r)
 }
