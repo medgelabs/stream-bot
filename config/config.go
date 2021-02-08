@@ -35,6 +35,12 @@ func New(channel string, configPath string) (Config, error) {
 	}, nil
 }
 
+// ChannelID returns the numeric ChannelID for the current broadcaster
+func (c *Config) ChannelID() string {
+	channelID := c.config.GetString(c.key("channelId"))
+	return channelID
+}
+
 // Nick returns the nickname to join IRC with
 func (c *Config) Nick() string {
 	nick := c.config.GetString(c.key("nick"))
