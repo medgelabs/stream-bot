@@ -6,6 +6,7 @@ import (
 	"sync"
 )
 
+// Bot handles various feature processing based on Stream events
 type Bot struct {
 	sync.Mutex
 
@@ -21,11 +22,6 @@ type Bot struct {
 	// events
 	events    chan Event
 	listening bool
-}
-
-// Client represents data being sent TO the Bot
-type Client interface {
-	SetDestination(chan<- Event)
 }
 
 func New() Bot {

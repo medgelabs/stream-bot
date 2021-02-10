@@ -9,6 +9,7 @@ import (
 	"medgebot/irc"
 	"medgebot/ledger"
 	log "medgebot/logger"
+	"medgebot/pubsub"
 	"medgebot/secret"
 	"medgebot/server"
 	"medgebot/ws"
@@ -67,7 +68,11 @@ func main() {
 	}
 
 	ircWs := ws.NewWebsocket()
-	ircWs.Connect("wss", "irc-ws.chat.twitch.tv:443")
+	err = ircWs.Connect("wss", "irc-ws.chat.twitch.tv:443")
+	if err != nil {
+		log.Fatal("irc ws connect", err)
+	}
+
 	irc := irc.NewClient(ircWs)
 	defer irc.Close()
 
@@ -79,6 +84,21 @@ func main() {
 	// IRC is both a Client and a ChatClient
 	chatBot.RegisterClient(irc)
 	chatBot.SetChatClient(irc)
+
+	// TODO pubsub is only used for ChannelPoints at this time.
+	// If we use pubsub for other features, it wouldn't make sense to
+	// guard pubsub creation behind this feature flag
+	if conf.ChannelPointsEnabled() || enableAll {
+		pubSubWs := ws.NewWebsocket()
+		err = pubSubWs.Connect("wss", "pubsub-edge.twitch.tv")
+		if err != nil {
+			log.Fatal("pubsub ws connect", err)
+		}
+
+		pubsub := pubsub.NewClient(pubSubWs, conf.ChannelID(), password)
+		pubsub.Start()
+		chatBot.RegisterClient(pubsub)
+	}
 
 	// Feature Toggles
 	if conf.CommandsEnabled() || enableAll {
