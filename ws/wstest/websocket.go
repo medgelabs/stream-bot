@@ -7,12 +7,15 @@ import (
 	"time"
 )
 
+// Websocket stubs a ws connection and keeps track of messages sent/received
+// with convenience methods for Tests. Does NOT communicate on the network
 type Websocket struct {
 	sync.Mutex
 	lines      []string
 	readCursor int
 }
 
+// NewWebsocket returns a new, fresh Websocket stub
 func NewWebsocket() *Websocket {
 	return &Websocket{
 		lines:      make([]string, 0),
@@ -25,7 +28,7 @@ func (w *Websocket) Send(message string) {
 	w.Write([]byte(message))
 }
 
-// Send is a convenience method over Write() that also waits
+// SendAndWait is a convenience method over Write() that also waits
 // for a new message to arrive
 func (w *Websocket) SendAndWait(message string) {
 	w.Write([]byte(message))
@@ -71,7 +74,7 @@ func (w *Websocket) String() string {
 
 // io.ReadWriteCloser
 func (w *Websocket) Read(dst []byte) (int, error) {
-	// Block until lines available?
+	// Block until lines available
 	for {
 		if len(w.lines) != 0 && w.readCursor < len(w.lines) {
 			break
