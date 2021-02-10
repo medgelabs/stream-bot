@@ -8,9 +8,6 @@ medgelabs:
     ledger:
       expirationTime: 43200 # 12 hours
     messageFormat: "Welcome to the lab, @{{.Sender}}!"
-  channelPoints:
-    enabled: false
-    messageFormat: "Thanks for the research @{{.Sender}}!"
   raids:
     enabled: true
     delaySeconds: 2
@@ -24,6 +21,12 @@ medgelabs:
   giftsubs:
     enabled: true
     messageFormat: "@{{.Sender}} loaned their lab coat to @{{.Recipient}}!"
+  channelPoints:
+    enabled: false
+    mappings:
+      - title: "Waste your Points"
+        type: "response"
+        messageFormat: "Thanks for donating your credits to the Lab Bots!"
   commands:
     enabled: true
     known:
