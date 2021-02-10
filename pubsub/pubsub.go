@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/buger/jsonparser"
 	"github.com/pkg/errors"
 )
 
@@ -132,26 +133,51 @@ func (client *PubSub) read() error {
 	str := string(buff)
 	log.Info("PubSub: " + str)
 
-	// TODO determine if Ping/Pong or other before parsing
-	var envelope struct {
-		Type string `json:"type"`
-		Data struct {
-			Topic   string          `json:"topic"`
-			Message json.RawMessage // to delay processing
-		} `json:"data"`
-	}
-
-	err = json.Unmarshal(buff, &envelope)
+	// First, we extract the type to see what we're receiving
+	msgType, err := jsonparser.GetString(buff, "type")
 	if err != nil {
-		return errors.Wrap(err, "pubsub message parse")
+		log.Warn("type field not found. Got message: " + str)
+		return errors.Wrap(err, "pubsub unknown message format")
 	}
 
-	// ChannelPoints
-	if strings.HasPrefix(envelope.Data.Topic, ChannelPointTopic) {
-		var channelPoints ChannelPointRedemption
-		err = json.Unmarshal(envelope.Data.Message, &channelPoints)
+	switch msgType {
+	case "RESPONSE":
+		// Ignore as this is a response to the LISTEN command
 
-		client.handleChannelPointRedemption(channelPoints)
+	case "PONG":
+		// Ignore, as this is handled by the PingPong goroutine
+
+	case "MESSAGE":
+		topic, err := jsonparser.GetString(buff, "data", "topic")
+		if err != nil {
+			msg := "pubsub data.topic not found in: " + str
+			log.Error(msg, err)
+			return errors.Wrap(err, msg)
+		}
+
+		messageJSON, err := jsonparser.GetString(buff, "data", "message")
+		if err != nil {
+			msg := "pubsub data.message not found in: " + str
+			log.Error(msg, err)
+			return errors.Wrap(err, msg)
+		}
+
+		// Parse topic for the appropriate Unmarshall call
+		// ChannelPoints
+		if strings.HasPrefix(topic, ChannelPointTopic) {
+			var channelPoints ChannelPointRedemption
+			err = json.Unmarshal([]byte(messageJSON), &channelPoints)
+			if err != nil {
+				msg := "pubsub data.message invalid: " + str
+				log.Error(msg, err)
+				return errors.Wrap(err, msg)
+			}
+
+			client.handleChannelPointRedemption(channelPoints)
+		}
+
+	default:
+		log.Warn("Unknown message. Skipping: " + str)
 	}
 
 	return nil
