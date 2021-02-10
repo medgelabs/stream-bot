@@ -95,7 +95,7 @@ func main() {
 	pubsub := pubsub.NewClient(pubSubWs, conf.ChannelID(), password)
 	pubsub.Start()
 	// defer pubsub.Close()
-	// chatBot.RegisterClient(irc)
+	chatBot.RegisterClient(pubsub)
 
 	// Feature Toggles
 	if conf.CommandsEnabled() || enableAll {

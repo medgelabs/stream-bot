@@ -184,7 +184,13 @@ func (client *PubSub) read() error {
 }
 
 func (client *PubSub) handleChannelPointRedemption(msg ChannelPointRedemption) {
-	log.Info(fmt.Sprintf("%+v", msg))
+	evt := bot.NewPointsEvent()
+	evt.Title = msg.Data.Redemption.Reward.Title
+	evt.Sender = msg.Data.Redemption.User.DisplayName
+	evt.Amount = msg.Data.Redemption.Reward.Cost
+	evt.Message = msg.Data.Redemption.UserInput
+
+	client.outboundEvents <- evt
 }
 
 // Write writes a message to the PubSub stream
@@ -201,4 +207,11 @@ func (client *PubSub) write(message interface{}) error {
 	json.NewEncoder(&buf).Encode(message)
 	_, err := client.conn.Write(buf.Bytes())
 	return err
+}
+
+// bot.Client
+
+// SetDestination sets the outbound channel for bot.Events the client will send to the bot
+func (client *PubSub) SetDestination(outbound chan<- bot.Event) {
+	client.outboundEvents = outbound
 }
