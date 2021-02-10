@@ -105,13 +105,19 @@ func (c *Config) GreetMessageFormat() string {
 	return msgFormat
 }
 
+// ChannelPointsEnabled checks the Commands feature flag
+func (c *Config) ChannelPointsEnabled() bool {
+	flagValue := c.config.GetBool(c.key("channelPoints.enabled"))
+	return flagValue
+}
+
 // CommandsEnabled checks the Commands feature flag
 func (c *Config) CommandsEnabled() bool {
 	flagValue := c.config.GetBool(c.key("commands.enabled"))
 	return flagValue
 }
 
-// KnownCommands returns a slice of map[prefix]message pairs, to be parsed elsewhere,
+// KnownCommand returns a slice of map[prefix]message pairs, to be parsed elsewhere,
 // that represent commands the Bot responds to
 type KnownCommand struct {
 	Prefix  string `mapstructure:"prefix"`

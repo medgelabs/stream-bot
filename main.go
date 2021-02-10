@@ -85,17 +85,20 @@ func main() {
 	chatBot.RegisterClient(irc)
 	chatBot.SetChatClient(irc)
 
-	// PubSub
-	pubSubWs := ws.NewWebsocket()
-	err = pubSubWs.Connect("wss", "pubsub-edge.twitch.tv")
-	if err != nil {
-		log.Fatal("pubsub ws connect", err)
-	}
+	// TODO pubsub is only used for ChannelPoints at this time.
+	// If we use pubsub for other features, it wouldn't make sense to
+	// guard pubsub creation behind this feature flag
+	if conf.ChannelPointsEnabled() || enableAll {
+		pubSubWs := ws.NewWebsocket()
+		err = pubSubWs.Connect("wss", "pubsub-edge.twitch.tv")
+		if err != nil {
+			log.Fatal("pubsub ws connect", err)
+		}
 
-	pubsub := pubsub.NewClient(pubSubWs, conf.ChannelID(), password)
-	pubsub.Start()
-	// defer pubsub.Close()
-	chatBot.RegisterClient(pubsub)
+		pubsub := pubsub.NewClient(pubSubWs, conf.ChannelID(), password)
+		pubsub.Start()
+		chatBot.RegisterClient(pubsub)
+	}
 
 	// Feature Toggles
 	if conf.CommandsEnabled() || enableAll {
