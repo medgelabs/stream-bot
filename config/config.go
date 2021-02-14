@@ -178,6 +178,12 @@ func (c *Config) GiftSubsMessageFormat() string {
 	return msgFormat
 }
 
+// AlertsEnabled checks the Alerts feature flag
+func (c *Config) AlertsEnabled() bool {
+	flagValue := c.config.GetBool(c.key("alerts.enabled"))
+	return flagValue
+}
+
 // key constructs valid channel-based config keys for Viper lookups
 func (c *Config) key(path string) string {
 	return fmt.Sprintf("%s.%s", c.channel, path)

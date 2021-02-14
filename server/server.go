@@ -1,6 +1,7 @@
 package server
 
 import (
+	"medgebot/bot"
 	"medgebot/bot/viewer"
 	"net/http"
 )
@@ -9,14 +10,18 @@ import (
 type Server struct {
 	router             *http.ServeMux
 	viewerMetricsStore viewer.MetricStore
+	alertWebSocket     *bot.WriteOnlyUnsafeWebSocket
 }
 
 // New returns a Server instance to be run with http.ListenAndServe()
-func New(metricStore viewer.MetricStore) *Server {
+func New(metricStore viewer.MetricStore, alertWebSocket *bot.WriteOnlyUnsafeWebSocket) *Server {
 	srv := &Server{
 		router:             http.NewServeMux(),
 		viewerMetricsStore: metricStore,
+		alertWebSocket:     alertWebSocket,
 	}
+
+	// TODO receive WebSocket connection for alerts and assign to alertWebSocket
 
 	srv.routes()
 	return srv
