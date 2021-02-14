@@ -67,7 +67,7 @@ func main() {
 		Channel:  channel,
 	}
 
-	ircWs := ws.NewWebsocket()
+	ircWs := ws.NewWebSocket()
 	err = ircWs.Connect("wss", "irc-ws.chat.twitch.tv:443")
 	if err != nil {
 		log.Fatal("irc ws connect", err)
@@ -89,7 +89,7 @@ func main() {
 	// If we use pubsub for other features, it wouldn't make sense to
 	// guard pubsub creation behind this feature flag
 	if conf.ChannelPointsEnabled() || enableAll {
-		pubSubWs := ws.NewWebsocket()
+		pubSubWs := ws.NewWebSocket()
 		err = pubSubWs.Connect("wss", "pubsub-edge.twitch.tv")
 		if err != nil {
 			log.Fatal("pubsub ws connect", err)
@@ -130,11 +130,12 @@ func main() {
 			log.Fatal("create ledger", err)
 		}
 
-		// pre-seed names we don't want greeted
+		// pre-seed names we want ignored
 		ledger.Put("streamlabs", "")
 		ledger.Put("nightbot", "")
 		ledger.Put("ranaebot", "")
 		ledger.Put("soundalerts", "")
+		ledger.Put("jtv", "")
 		ledger.Put(strings.TrimPrefix(channel, "#"), "") // Prevent greeting the broadcaster
 
 		// Greeter config
@@ -188,14 +189,21 @@ func main() {
 			bot.NewHandlerTemplate(subsTempl), bot.NewHandlerTemplate(giftSubsTempl))
 	}
 
+	// Alerts link between the Bot and the Web API
+	ws := bot.WriteOnlyUnsafeWebSocket{}
+	if conf.AlertsEnabled() || enableAll {
+		chatBot.RegisterAlertHandler(&ws)
+	}
+
 	// Start the Bot only after all handlers are loaded
 	if err := chatBot.Start(); err != nil {
 		log.Fatal("bot connect", err)
 	}
 
+	// TODO should we have a setter for WS if AlertsEnabled?
 	// Start HTTP server
 	viewerMetricStore := viewer.NewInMemoryStore()
-	srv := server.New(viewerMetricStore)
+	srv := server.New(viewerMetricStore, &ws)
 	if err := http.ListenAndServe(":8080", srv); err != nil {
 		log.Fatal("start HTTP server", err)
 	}

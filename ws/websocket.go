@@ -13,15 +13,37 @@ import (
 type Connection struct {
 	sync.Mutex
 	conn *websocket.Conn
+
+	// Reconnection params
+	connURL             url.URL
+	autoReconnect       bool
+	maxReconnectRetries int
 }
 
-func NewWebsocket() *Connection {
-	return &Connection{}
+// NewWebSocket creates a WS container, without connecting. Must call Connect() when
+// ready to connect to the network. By default: auto-reconnect logic is disabled.
+func NewWebSocket() *Connection {
+	return &Connection{
+		autoReconnect:       false,
+		maxReconnectRetries: 0,
+	}
 }
 
+// EnableAutoReconnect turns on auto-reconnect logic on a read/write error
+func (ws *Connection) EnableAutoReconnect() {
+	ws.autoReconnect = true
+}
+
+// SetMaxReconnects sets the maximum number of reconnect attempts made on a
+// read/write error
+func (ws *Connection) SetMaxReconnects(maxReconnectRetries int) {
+	ws.maxReconnectRetries = maxReconnectRetries
+}
+
+// Connect actually connects the underlying WS connection
 func (ws *Connection) Connect(scheme, server string) error {
-	u := url.URL{Scheme: scheme, Host: server, Path: "/"}
-	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	ws.connURL = url.URL{Scheme: scheme, Host: server, Path: "/"}
+	conn, _, err := websocket.DefaultDialer.Dial(ws.connURL.String(), nil)
 	if err != nil {
 		return err
 	}
@@ -30,6 +52,9 @@ func (ws *Connection) Connect(scheme, server string) error {
 	return nil
 }
 
+// Read from the underlying connection.
+// If ws.autoReconnect is true, on a read error it will attempt to reconnect the WS.
+// On ws.maxReconnectRetries, the error will be returned
 func (ws *Connection) Read(dest []byte) (int, error) {
 	_, message, err := ws.conn.ReadMessage()
 	if err != nil {
@@ -40,6 +65,9 @@ func (ws *Connection) Read(dest []byte) (int, error) {
 	return copy(dest, message), nil
 }
 
+// Write to the underlying connection.
+// If ws.autoReconnect is true, on a write error it will attempt to reconnect the WS.
+// On ws.maxReconnectRetries, the error will be returned
 func (ws *Connection) Write(data []byte) (int, error) {
 	if ws.conn == nil {
 		return 0, errors.New("ws.conn is nil. Did you forget to call ws.Connect()?")
@@ -55,6 +83,7 @@ func (ws *Connection) Write(data []byte) (int, error) {
 	return len(data), nil
 }
 
+// Close the underlying connection
 func (ws *Connection) Close() error {
 	return ws.conn.Close()
 }
