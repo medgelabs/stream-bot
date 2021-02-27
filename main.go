@@ -67,35 +67,39 @@ func main() {
 		Channel:  channel,
 	}
 
-	ircWs := ws.NewWebSocket()
-	err = ircWs.Connect("wss", "irc-ws.chat.twitch.tv:443")
+	ircWs := ws.NewWebSocket("wss", "irc-ws.chat.twitch.tv:443")
+	err = ircWs.Connect()
 	if err != nil {
 		log.Fatal("irc ws connect", err)
 	}
 
-	irc := irc.NewClient(ircWs)
-	defer irc.Close()
+	ircClient := irc.NewClient(ircWs)
+	ircWs.SetPostReconnectFunc(func() error {
+		return ircClient.Start(ircConfig)
+	})
+	defer ircClient.Close()
 
-	err = irc.Start(ircConfig)
+	err = ircClient.Start(ircConfig)
 	if err != nil {
 		log.Fatal("start IRC", err)
 	}
 
 	// IRC is both a Client and a ChatClient
-	chatBot.RegisterClient(irc)
-	chatBot.SetChatClient(irc)
+	chatBot.RegisterClient(ircClient)
+	chatBot.SetChatClient(ircClient)
 
 	// TODO pubsub is only used for ChannelPoints at this time.
 	// If we use pubsub for other features, it wouldn't make sense to
 	// guard pubsub creation behind this feature flag
 	if conf.ChannelPointsEnabled() || enableAll {
-		pubSubWs := ws.NewWebSocket()
-		err = pubSubWs.Connect("wss", "pubsub-edge.twitch.tv")
+		pubSubWs := ws.NewWebSocket("wss", "pubsub-edge.twitch.tv")
+		err = pubSubWs.Connect()
 		if err != nil {
 			log.Fatal("pubsub ws connect", err)
 		}
 
 		pubsub := pubsub.NewClient(pubSubWs, conf.ChannelID(), password)
+		pubSubWs.SetPostReconnectFunc(pubsub.Start)
 		pubsub.Start()
 		chatBot.RegisterClient(pubsub)
 	}
