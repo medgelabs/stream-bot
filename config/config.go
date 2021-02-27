@@ -35,6 +35,12 @@ func New(channel string, configPath string) (Config, error) {
 	}, nil
 }
 
+// ChannelID returns the numeric ChannelID for the current broadcaster
+func (c *Config) ChannelID() string {
+	channelID := c.config.GetString(c.key("channelId"))
+	return channelID
+}
+
 // Nick returns the nickname to join IRC with
 func (c *Config) Nick() string {
 	nick := c.config.GetString(c.key("nick"))
@@ -99,13 +105,19 @@ func (c *Config) GreetMessageFormat() string {
 	return msgFormat
 }
 
+// ChannelPointsEnabled checks the Commands feature flag
+func (c *Config) ChannelPointsEnabled() bool {
+	flagValue := c.config.GetBool(c.key("channelPoints.enabled"))
+	return flagValue
+}
+
 // CommandsEnabled checks the Commands feature flag
 func (c *Config) CommandsEnabled() bool {
 	flagValue := c.config.GetBool(c.key("commands.enabled"))
 	return flagValue
 }
 
-// KnownCommands returns a slice of map[prefix]message pairs, to be parsed elsewhere,
+// KnownCommand returns a slice of map[prefix]message pairs, to be parsed elsewhere,
 // that represent commands the Bot responds to
 type KnownCommand struct {
 	Prefix  string `mapstructure:"prefix"`
@@ -164,6 +176,12 @@ func (c *Config) SubsMessageFormat() string {
 func (c *Config) GiftSubsMessageFormat() string {
 	msgFormat := c.config.GetString(c.key("giftsubs.messageFormat"))
 	return msgFormat
+}
+
+// AlertsEnabled checks the Alerts feature flag
+func (c *Config) AlertsEnabled() bool {
+	flagValue := c.config.GetBool(c.key("alerts.enabled"))
+	return flagValue
 }
 
 // key constructs valid channel-based config keys for Viper lookups

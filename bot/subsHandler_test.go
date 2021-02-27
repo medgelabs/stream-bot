@@ -17,8 +17,8 @@ func TestSubHandler(t *testing.T) {
 
 	// Initialize Handler
 	bot.RegisterSubsHandler(
-		HandlerTemplate{templ: subsTmpl},
-		HandlerTemplate{templ: giftSubTmpl})
+		HandlerTemplate{template: subsTmpl},
+		HandlerTemplate{template: giftSubTmpl})
 
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()
@@ -44,8 +44,8 @@ func TestGiftSubHandler(t *testing.T) {
 
 	// Initialize Handler
 	bot.RegisterSubsHandler(
-		HandlerTemplate{templ: subsTmpl},
-		HandlerTemplate{templ: giftSubTmpl})
+		HandlerTemplate{template: subsTmpl},
+		HandlerTemplate{template: giftSubTmpl})
 
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()
@@ -71,8 +71,8 @@ func TestSubHandlerIgnoresInvalidEvents(t *testing.T) {
 
 	// Initialize Handler
 	bot.RegisterSubsHandler(
-		HandlerTemplate{templ: subsTmpl},
-		HandlerTemplate{templ: giftSubTmpl})
+		HandlerTemplate{template: subsTmpl},
+		HandlerTemplate{template: giftSubTmpl})
 
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()
