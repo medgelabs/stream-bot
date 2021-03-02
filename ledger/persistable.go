@@ -2,7 +2,7 @@ package ledger
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"strconv"
@@ -134,7 +134,7 @@ func (l *PersistableLedger) expired(entryTs int64) bool {
 
 // rehydrate reads the given file and returns a hydrated FileLedger
 func (l *PersistableLedger) rehydrate() error {
-	bytes, err := ioutil.ReadAll(l.ledger)
+	bytes, err := io.ReadAll(l.ledger)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("ERROR: read ledger - %v", err))
 	}
