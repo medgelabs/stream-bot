@@ -1,6 +1,8 @@
 package bot
 
 import (
+	"fmt"
+	"math/rand"
 	"strings"
 )
 
@@ -56,6 +58,19 @@ func (bot *Bot) HandleCommands(knownCommands []Command) {
 							⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣄⣁⣀⣆⡐⣶⣶⣧⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿
 							⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿`
 					bot.SendMessage(strings.TrimSpace(msg))
+				}
+
+				// Fjoell Feature Request: Coin Throw
+				if strings.HasPrefix(contents, "!coin") {
+					side := 1 + rand.Int()%2
+					result := ""
+					if side == 1 {
+						result = "heads"
+					} else {
+						result = "tails"
+					}
+
+					bot.SendMessage(fmt.Sprintf("@%s flipped: %s", evt.Sender, result))
 				}
 			}
 		}),
