@@ -2,6 +2,7 @@ package bot
 
 import (
 	"medgebot/bot/bottest"
+	"strings"
 	"testing"
 )
 
@@ -46,29 +47,31 @@ func TestCoinThrow(t *testing.T) {
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()
 
-	// Valid bits event
-	evt := NewChatEvent()
-	evt.Sender = "medgelabs"
-	evt.Message = "!coin"
-
+	// Fire off !coin commands many times
 	var responses []Event
-
 	for i := 0; i < 100; i++ {
+		evt := NewChatEvent()
+		evt.Sender = "medgelabs"
+		evt.Message = "!coin"
 		bot.events <- evt
-		responses = append(responses, <-checker.events)
+
+		resp := <-checker.events
+		responses = append(responses, resp)
 	}
 
 	heads := 0
 	tails := 0
 	for _, event := range responses {
-		if event.Message == "heads" {
+		if strings.Contains(event.Message, "heads") {
 			heads++
-		} else if event.Message == "tails" {
+		} else if strings.Contains(event.Message, "tails") {
 			tails++
 		} else {
-			t.Fatalf("Unknown coin flip result - %s", event.Message)
+			t.Logf("Unknown coin flip result - %s", event.Message)
 		}
 	}
+
+	t.Logf("Heads: %d | Tails: %d", heads, tails)
 
 	if heads < 10 {
 		t.Fatalf("Oddly distributed amount of heads flips: %d", heads)
