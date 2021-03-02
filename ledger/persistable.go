@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	// ENTRY_LINE_SIZE declares how entries are written to the File
 	ENTRY_LINE_SIZE = 3 // key | value | createdTs
 
 	// Indices
@@ -21,7 +22,8 @@ const (
 	TS    = 2
 )
 
-// PersistableLedger is a in-memory cache backed by a FS file, if persistent
+// PersistableLedger is a in-memory cache backed by a FS file, if persistent.
+// Key expiration is enabled by setting an expiration > 0. Disabled if <= 0
 type PersistableLedger struct {
 	cache          map[string]Entry
 	persistent     bool
@@ -31,6 +33,7 @@ type PersistableLedger struct {
 	expiration     int64
 }
 
+// Entry represents entries in the cache
 type Entry struct {
 	key       string
 	value     string
@@ -42,7 +45,7 @@ func NewInMemoryLedger(keyExpirationSeconds int64) (PersistableLedger, error) {
 	return NewFileLedger(nil, keyExpirationSeconds)
 }
 
-// FileLedger that persists its cache to the given os.File
+// NewFileLedger that persists its cache to the given os.File
 // if os.File is nil, it is assumed to be a non-persisting Ledger
 func NewFileLedger(ledger *os.File, keyExpirationSeconds int64) (PersistableLedger, error) {
 	cache := make(map[string]Entry)
@@ -126,8 +129,14 @@ func (l *PersistableLedger) line(key string, entry Entry) string {
 	return buf.String()
 }
 
-// expired checks if the given key's timestamp is beyond the expiration threshold
+// expired checks if the given key's timestamp is beyond the expiration threshold.
+// Always returns false if an expiration is not set
 func (l *PersistableLedger) expired(entryTs int64) bool {
+	// If expiration is not set, all keys are considered active
+	if l.expiration <= 0 {
+		return false
+	}
+
 	expirationTime := time.Now().Unix() - l.expiration
 	return entryTs < expirationTime
 }
@@ -164,8 +173,7 @@ func (l *PersistableLedger) rehydrate() error {
 			continue
 		}
 
-		expirationTime := time.Now().Unix() - l.expiration
-		if ts < expirationTime {
+		if l.expired(ts) {
 			continue
 		}
 
@@ -190,7 +198,8 @@ func (l *PersistableLedger) flushCache() {
 	// Truncate(0) clears the file contents
 	l.ledger.Truncate(0)
 
-	for username, ts := range l.cache {
-		l.ledger.Write([]byte(l.line(username, ts)))
+	for key, val := range l.cache {
+		line := l.line(key, val)
+		l.ledger.Write([]byte(line))
 	}
 }
