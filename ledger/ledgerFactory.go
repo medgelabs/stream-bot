@@ -16,35 +16,35 @@ const (
 	MEM  = "mem"
 )
 
-func NewLedger(config config.Config) (Ledger, error) {
-	ledgerType := config.Ledger()
-	if ledgerType == "" {
-		return nil, errors.New("config key - ledger not found / empty")
+func NewCache(config config.Config) (Cache, error) {
+	cacheType := config.Cache()
+	if cacheType == "" {
+		return nil, errors.New("config key - cache not found / empty")
 	}
 
-	keyExpirationTime := config.LedgerExpirationTime()
+	keyExpirationTime := config.CacheExpirationTime()
 
-	switch strings.ToLower(ledgerType) {
+	switch strings.ToLower(cacheType) {
 	case FILE:
-		file, err := ledgerFile("ledger.txt")
+		file, err := cacheFile("ledger.txt")
 		if err != nil {
 			log.Fatalf("FATAL: load ledger file - %v", err)
 		}
 
-		ledger, err := NewFileLedger(file, keyExpirationTime)
+		cache, err := NewFileCache(file, keyExpirationTime)
 		if err != nil {
 			log.Fatalf("FATAL: read ledger file - %v", err)
 		}
-		return &ledger, err
+		return &cache, err
 	case MEM:
-		mem, _ := NewInMemoryLedger(keyExpirationTime)
+		mem, _ := NewInMemoryCache(keyExpirationTime)
 		return &mem, nil
 	default:
-		return nil, fmt.Errorf("Invalid ledgerType - %s. Valid values are: %v", ledgerType, []string{FILE, MEM})
+		return nil, fmt.Errorf("Invalid ledgerType - %s. Valid values are: %v", cacheType, []string{FILE, MEM})
 	}
 }
 
-func ledgerFile(filepath string) (*os.File, error) {
+func cacheFile(filepath string) (*os.File, error) {
 	// If the file is more than 12 hours ago, clear
 	ledgerFile, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
 	return ledgerFile, err

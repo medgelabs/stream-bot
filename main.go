@@ -128,19 +128,19 @@ func main() {
 
 	// if config.greeterEnabled() {
 	if conf.GreeterEnabled() || enableAll {
-		// Ledger for the auto greeter
-		ledger, err := ledger.NewLedger(conf)
+		// Cache for the auto greeter
+		cache, err := ledger.NewCache(conf)
 		if err != nil {
-			log.Fatal("create ledger", err)
+			log.Fatal("create cache", err)
 		}
 
 		// pre-seed names we want ignored
-		ledger.Put("streamlabs", "")
-		ledger.Put("nightbot", "")
-		ledger.Put("ranaebot", "")
-		ledger.Put("soundalerts", "")
-		ledger.Put("jtv", "")
-		ledger.Put(strings.TrimPrefix(channel, "#"), "") // Prevent greeting the broadcaster
+		cache.Put("streamlabs", "")
+		cache.Put("nightbot", "")
+		cache.Put("ranaebot", "")
+		cache.Put("soundalerts", "")
+		cache.Put("jtv", "")
+		cache.Put(strings.TrimPrefix(channel, "#"), "") // Prevent greeting the broadcaster
 
 		// Greeter config
 		greetMessageFormat := conf.GreetMessageFormat()
@@ -149,7 +149,7 @@ func main() {
 			log.Fatal("invalid Greeter message in config", err)
 		}
 
-		chatBot.RegisterGreeter(ledger, bot.NewHandlerTemplate(greetTempl))
+		chatBot.RegisterGreeter(cache, bot.NewHandlerTemplate(greetTempl))
 	}
 
 	if conf.RaidsEnabled() || enableAll {

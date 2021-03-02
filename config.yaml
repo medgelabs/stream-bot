@@ -2,10 +2,10 @@ medgelabs:
   channelId: 62232210
   nick: medgelabs
   secretStore: env
-  ledger: file
+  cacheType: file
   greeter:
     enabled: true
-    ledger:
+    cache:
       expirationTime: 43200 # 12 hours
     messageFormat: "Welcome to the lab, @{{.Sender}}!"
   raids:
@@ -48,23 +48,3 @@ medgelabs:
         message: "https://github.com/MatthewEdge/dotfiles"
       - prefix: "!music"
         message: "Most music comes from the Youtube Audio Library! https://www.youtube.com/audiolibrary/music?nv=1"
-
-sorceryandsarcasm:
-  channelId: 66490190
-  nick: medgelabs
-  secretStore: env
-  ledger: file
-  raids:
-    enabled: true
-    delaySeconds: 2
-    messageFormat: "!so @{{.Sender}}"
-
-spookyghostmachine:
-  channelId: 119432399
-  nick: medgelabs
-  secretStore: env
-  ledger: file
-  greeter:
-    messageFormat: "@{{.Sender}} spooky127Hype"
-  raids:
-    messageFormat: "!so @{{.Sender}}"

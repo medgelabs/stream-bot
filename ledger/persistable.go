@@ -22,12 +22,12 @@ const (
 	TS    = 2
 )
 
-// PersistableLedger is a in-memory cache backed by a FS file, if persistent.
+// PersistableCache is a in-memory cache backed by a FS file, if persistent.
 // Key expiration is enabled by setting an expiration > 0. Disabled if <= 0
-type PersistableLedger struct {
+type PersistableCache struct {
 	cache          map[string]Entry
 	persistent     bool
-	ledger         *os.File
+	persistTarget  *os.File
 	lineSeparator  string
 	fieldSeparator string
 	expiration     int64
@@ -40,22 +40,22 @@ type Entry struct {
 	timestamp int64
 }
 
-// NewInMemoryLedger is a Ledger that does not persist its in memory cache
-func NewInMemoryLedger(keyExpirationSeconds int64) (PersistableLedger, error) {
-	return NewFileLedger(nil, keyExpirationSeconds)
+// NewInMemoryCache is a Cache that does not persist its in memory cache
+func NewInMemoryCache(keyExpirationSeconds int64) (PersistableCache, error) {
+	return NewFileCache(nil, keyExpirationSeconds)
 }
 
-// NewFileLedger that persists its cache to the given os.File
-// if os.File is nil, it is assumed to be a non-persisting Ledger
-func NewFileLedger(ledger *os.File, keyExpirationSeconds int64) (PersistableLedger, error) {
+// NewFileCache that persists its cache to the given os.File
+// if os.File is nil, it is assumed to be a non-persisting Cache
+func NewFileCache(file *os.File, keyExpirationSeconds int64) (PersistableCache, error) {
 	cache := make(map[string]Entry)
 	lineSeparator := "\n"
 	fieldSeparator := "|"
 
-	// To ensure we remove stale data, we rewrite state to the ledger
-	pl := PersistableLedger{
-		ledger:         ledger,
-		persistent:     (ledger != nil),
+	// To ensure we remove stale data, we rewrite state to the cache persistence target
+	pl := PersistableCache{
+		persistTarget:  file,
+		persistent:     (file != nil),
 		cache:          cache,
 		lineSeparator:  lineSeparator,
 		fieldSeparator: fieldSeparator,
@@ -67,11 +67,11 @@ func NewFileLedger(ledger *os.File, keyExpirationSeconds int64) (PersistableLedg
 
 		// Setup cache flushing
 		pl.flushCache()
-		go func(ledger *PersistableLedger) {
+		go func(cache *PersistableCache) {
 			for {
 				select {
 				case <-time.After(10 * time.Second):
-					pl.flushCache()
+					cache.flushCache()
 				}
 			}
 		}(&pl)
@@ -81,7 +81,7 @@ func NewFileLedger(ledger *os.File, keyExpirationSeconds int64) (PersistableLedg
 }
 
 // Get the value at the given key. Returns error if key not found
-func (l *PersistableLedger) Get(key string) (string, error) {
+func (l *PersistableCache) Get(key string) (string, error) {
 	if l.Absent(key) {
 		return "", errors.Errorf("Key not found: %s", key)
 	}
@@ -92,7 +92,7 @@ func (l *PersistableLedger) Get(key string) (string, error) {
 
 // Put the given key/value. If already present, the timestamp will
 // be updated
-func (l *PersistableLedger) Put(key, value string) error {
+func (l *PersistableCache) Put(key, value string) error {
 	ts := time.Now().Unix()
 	entry := Entry{
 		key:       key,
@@ -100,13 +100,13 @@ func (l *PersistableLedger) Put(key, value string) error {
 		timestamp: ts,
 	}
 
-	// Add to cache and write to ledger immediately
+	// Add to cache and write to persistence immediately
 	l.cache[key] = entry
 
 	if l.persistent {
-		_, err := l.ledger.Write([]byte(l.line(key, entry)))
+		_, err := l.persistTarget.Write([]byte(l.line(key, entry)))
 		if err != nil {
-			return errors.Wrap(err, "ERROR: failed to add "+key+" to ledger")
+			return errors.Wrap(err, "ERROR: failed to persist "+key+"")
 		}
 	}
 
@@ -114,13 +114,13 @@ func (l *PersistableLedger) Put(key, value string) error {
 }
 
 // Absent is true if the key is either not present or expired
-func (l *PersistableLedger) Absent(key string) bool {
+func (l *PersistableCache) Absent(key string) bool {
 	entry, ok := l.cache[key]
 	return !ok || l.expired(entry.timestamp)
 }
 
-// line returns a string representation of a formatted ledger line
-func (l *PersistableLedger) line(key string, entry Entry) string {
+// line returns a string representation of a formatted file line
+func (l *PersistableCache) line(key string, entry Entry) string {
 	var buf strings.Builder
 	buf.WriteString(key + l.fieldSeparator)
 	buf.WriteString(entry.value + l.fieldSeparator)
@@ -131,7 +131,7 @@ func (l *PersistableLedger) line(key string, entry Entry) string {
 
 // expired checks if the given key's timestamp is beyond the expiration threshold.
 // Always returns false if an expiration is not set
-func (l *PersistableLedger) expired(entryTs int64) bool {
+func (l *PersistableCache) expired(entryTs int64) bool {
 	// If expiration is not set, all keys are considered active
 	if l.expiration <= 0 {
 		return false
@@ -141,11 +141,11 @@ func (l *PersistableLedger) expired(entryTs int64) bool {
 	return entryTs < expirationTime
 }
 
-// rehydrate reads the given file and returns a hydrated FileLedger
-func (l *PersistableLedger) rehydrate() error {
-	bytes, err := io.ReadAll(l.ledger)
+// rehydrate reads the given file and returns a hydrated FileCache
+func (l *PersistableCache) rehydrate() error {
+	bytes, err := io.ReadAll(l.persistTarget)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("ERROR: read ledger - %v", err))
+		return errors.Wrap(err, fmt.Sprintf("ERROR: read cache persistence - %v", err))
 	}
 
 	// Hydrate cache from Reader
@@ -160,7 +160,7 @@ func (l *PersistableLedger) rehydrate() error {
 
 		// Don't add invalid lines
 		if len(tokens) != ENTRY_LINE_SIZE {
-			log.Printf("ERROR: invalid ledger line - %s", line)
+			log.Printf("ERROR: invalid cache line - %s", line)
 			continue
 		}
 
@@ -189,17 +189,17 @@ func (l *PersistableLedger) rehydrate() error {
 }
 
 // flushCache writes the state of l.cache to the given os.File
-func (l *PersistableLedger) flushCache() {
-	if l.ledger == nil {
-		log.Println("WARN: flushCache called for a nil ledger")
+func (l *PersistableCache) flushCache() {
+	if l.persistTarget == nil {
+		log.Println("WARN: flushCache called for a nil cache")
 		return
 	}
 
 	// Truncate(0) clears the file contents
-	l.ledger.Truncate(0)
+	l.persistTarget.Truncate(0)
 
 	for key, val := range l.cache {
 		line := l.line(key, val)
-		l.ledger.Write([]byte(line))
+		l.persistTarget.Write([]byte(line))
 	}
 }
