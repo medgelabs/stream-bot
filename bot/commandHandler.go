@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+	"time"
 )
 
 // Command represents a known Command from Config that the Bot can respond to
@@ -62,6 +63,7 @@ func (bot *Bot) HandleCommands(knownCommands []Command) {
 
 				// Fjoell Feature Request: Coin Throw
 				if strings.HasPrefix(contents, "!coin") {
+					rand.Seed(time.Now().UnixNano())
 					side := 1 + rand.Int()%2
 					result := ""
 					if side == 1 {
