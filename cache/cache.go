@@ -1,4 +1,4 @@
-package ledger
+package cache
 
 // Cache describes a store of key/value pairs
 type Cache interface {

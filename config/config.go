@@ -47,7 +47,7 @@ func (c *Config) Nick() string {
 	return nick
 }
 
-// Cache returns the desired Cache type, which should match the ledger/ledgerFactory.go enum
+// Cache returns the desired Cache type, which should match the cache/cacheFactory.go enum
 func (c *Config) Cache() string {
 	val := c.config.GetString(c.key("cacheType"))
 	return val
@@ -93,7 +93,7 @@ func (c *Config) GreeterEnabled() bool {
 	return flagValue
 }
 
-// CacheExpirationTime grabs the expiration time for the Greeter ledger
+// CacheExpirationTime grabs the expiration time for the Greeter Cache
 func (c *Config) CacheExpirationTime() int64 {
 	value := c.config.GetInt64(c.key("greeter.cache.expirationTime"))
 	return value

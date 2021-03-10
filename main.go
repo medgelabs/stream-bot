@@ -4,10 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"medgebot/bot"
-	"medgebot/bot/viewer"
+	"medgebot/cache"
 	"medgebot/config"
 	"medgebot/irc"
-	"medgebot/ledger"
 	log "medgebot/logger"
 	"medgebot/pubsub"
 	"medgebot/secret"
@@ -129,7 +128,7 @@ func main() {
 	// if config.greeterEnabled() {
 	if conf.GreeterEnabled() || enableAll {
 		// Cache for the auto greeter
-		cache, err := ledger.NewCache(conf)
+		cache, err := cache.New(conf)
 		if err != nil {
 			log.Fatal("create cache", err)
 		}
@@ -206,8 +205,8 @@ func main() {
 
 	// TODO should we have a setter for WS if AlertsEnabled?
 	// Start HTTP server
-	viewerMetricStore := viewer.NewInMemoryStore()
-	srv := server.New(viewerMetricStore, &ws)
+	metricsCache, _ := cache.InMemory(0)
+	srv := server.New(&metricsCache, &ws)
 	if err := http.ListenAndServe(":8080", srv); err != nil {
 		log.Fatal("start HTTP server", err)
 	}

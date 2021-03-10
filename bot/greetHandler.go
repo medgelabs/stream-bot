@@ -2,12 +2,13 @@ package bot
 
 import (
 	"log"
-	"medgebot/ledger"
+	"medgebot/cache"
 	"strings"
 	"time"
 )
 
-func (bot *Bot) RegisterGreeter(cache ledger.Cache, messageTemplate HandlerTemplate) {
+// RegisterGreeter creates and registers the greeter module with the Bot
+func (bot *Bot) RegisterGreeter(cache cache.Cache, messageTemplate HandlerTemplate) {
 	bot.RegisterHandler(
 		NewHandler(func(evt Event) {
 			username := strings.ToLower(evt.Sender)

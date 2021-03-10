@@ -2,19 +2,19 @@ package server
 
 import (
 	"medgebot/bot"
-	"medgebot/bot/viewer"
+	"medgebot/cache"
 	"net/http"
 )
 
 // Server REST API
 type Server struct {
 	router             *http.ServeMux
-	viewerMetricsStore viewer.MetricStore
+	viewerMetricsStore cache.Cache
 	alertWebSocket     *bot.WriteOnlyUnsafeWebSocket
 }
 
 // New returns a Server instance to be run with http.ListenAndServe()
-func New(metricStore viewer.MetricStore, alertWebSocket *bot.WriteOnlyUnsafeWebSocket) *Server {
+func New(metricStore cache.Cache, alertWebSocket *bot.WriteOnlyUnsafeWebSocket) *Server {
 	srv := &Server{
 		router:             http.NewServeMux(),
 		viewerMetricsStore: metricStore,
