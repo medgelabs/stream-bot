@@ -4,10 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"medgebot/bot"
-	"medgebot/bot/viewer"
+	"medgebot/cache"
 	"medgebot/config"
 	"medgebot/irc"
-	"medgebot/ledger"
 	log "medgebot/logger"
 	"medgebot/pubsub"
 	"medgebot/secret"
@@ -128,19 +127,19 @@ func main() {
 
 	// if config.greeterEnabled() {
 	if conf.GreeterEnabled() || enableAll {
-		// Ledger for the auto greeter
-		ledger, err := ledger.NewLedger(conf)
+		// Cache for the auto greeter
+		cache, err := cache.New(conf)
 		if err != nil {
-			log.Fatal("create ledger", err)
+			log.Fatal("create cache", err)
 		}
 
 		// pre-seed names we want ignored
-		ledger.Put("streamlabs", "")
-		ledger.Put("nightbot", "")
-		ledger.Put("ranaebot", "")
-		ledger.Put("soundalerts", "")
-		ledger.Put("jtv", "")
-		ledger.Put(strings.TrimPrefix(channel, "#"), "") // Prevent greeting the broadcaster
+		cache.Put("streamlabs", "")
+		cache.Put("nightbot", "")
+		cache.Put("ranaebot", "")
+		cache.Put("soundalerts", "")
+		cache.Put("jtv", "")
+		cache.Put(strings.TrimPrefix(channel, "#"), "") // Prevent greeting the broadcaster
 
 		// Greeter config
 		greetMessageFormat := conf.GreetMessageFormat()
@@ -149,7 +148,7 @@ func main() {
 			log.Fatal("invalid Greeter message in config", err)
 		}
 
-		chatBot.RegisterGreeter(ledger, bot.NewHandlerTemplate(greetTempl))
+		chatBot.RegisterGreeter(cache, bot.NewHandlerTemplate(greetTempl))
 	}
 
 	if conf.RaidsEnabled() || enableAll {
@@ -206,8 +205,8 @@ func main() {
 
 	// TODO should we have a setter for WS if AlertsEnabled?
 	// Start HTTP server
-	viewerMetricStore := viewer.NewInMemoryStore()
-	srv := server.New(viewerMetricStore, &ws)
+	metricsCache, _ := cache.InMemory(0)
+	srv := server.New(&metricsCache, &ws)
 	if err := http.ListenAndServe(":8080", srv); err != nil {
 		log.Fatal("start HTTP server", err)
 	}

@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"html/template"
+	"medgebot/bot/viewer"
 	log "medgebot/logger"
 	"net/http"
 	"sync"
@@ -22,7 +23,8 @@ func (s *Server) fetchLastSub() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		lastSub, _ := s.viewerMetricsStore.Fetch("lastSub")
+		str, _ := s.viewerMetricsStore.Get("lastSub")
+		lastSub, _ := viewer.FromCache(str)
 
 		json.NewEncoder(w).Encode(response{
 			Name:   lastSub.Name,
@@ -56,7 +58,7 @@ func (s *Server) lastSubView(apiEndpoint string) http.HandlerFunc {
 						  let content = document.querySelector("section.content")
 						  fetch("{{.ApiEndpoint}}")
 						    .then(r => r.json())
-							.then(r => content.innerHTML = r.name)
+							.then(r => content.innerHTML = "Last Sub: " + r.name)
 							.catch(err => content.innerHTML = err)
 						}
 					 </script>

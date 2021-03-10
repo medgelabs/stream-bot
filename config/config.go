@@ -47,18 +47,18 @@ func (c *Config) Nick() string {
 	return nick
 }
 
-// Ledger returns the desired ledger type, which should match the ledger/ledgerFactory.go enum
-func (c *Config) Ledger() string {
-	ledger := c.config.GetString(c.key("ledger"))
-	return ledger
+// Cache returns the desired Cache type, which should match the cache/cacheFactory.go enum
+func (c *Config) Cache() string {
+	val := c.config.GetString(c.key("cacheType"))
+	return val
 }
 
-// RedisHost if the Ledger type is REDIS
+// RedisHost if the Cache type is REDIS
 func (c *Config) RedisHost() string {
 	return os.Getenv("REDIS_HOST")
 }
 
-// RedisPort if the Ledger type is REDIS
+// RedisPort if the Cache type is REDIS
 func (c *Config) RedisPort() string {
 	return os.Getenv("REDIS_PORT")
 }
@@ -93,9 +93,9 @@ func (c *Config) GreeterEnabled() bool {
 	return flagValue
 }
 
-// LedgerExpirationTime grabs the expiration time for the Greeter ledger
-func (c *Config) LedgerExpirationTime() int64 {
-	value := c.config.GetInt64(c.key("greeter.ledger.expirationTime"))
+// CacheExpirationTime grabs the expiration time for the Greeter Cache
+func (c *Config) CacheExpirationTime() int64 {
+	value := c.config.GetInt64(c.key("greeter.cache.expirationTime"))
 	return value
 }
 
