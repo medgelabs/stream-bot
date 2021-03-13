@@ -1,10 +1,10 @@
 package bot
 
 import (
-	"log"
+	log "medgebot/logger"
 )
 
-// Prints Chat messages to the console
+// RegisterReadLogger prints Chat messages to the console
 func (bot *Bot) RegisterReadLogger() {
 	bot.RegisterHandler(
 		NewHandler(func(evt Event) {
@@ -13,7 +13,7 @@ func (bot *Bot) RegisterReadLogger() {
 				return
 			}
 
-			log.Printf("%+v", evt)
+			log.Info("%+v", evt)
 		}),
 	)
 }

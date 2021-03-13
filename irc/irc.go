@@ -60,7 +60,7 @@ func (irc *Irc) Start(config Config) error {
 	go func() {
 		for {
 			if err := irc.read(); err != nil {
-				log.Error("irc read", err)
+				log.Error(err, "irc read")
 				break
 			}
 		}
@@ -79,13 +79,13 @@ func (irc *Irc) Start(config Config) error {
 // Authenticate connects to the IRC stream with the given nick and password
 func (irc *Irc) Authenticate(nick, password string) error {
 	if err := irc.sendPass(password); err != nil {
-		log.Error("send PASS failed", err)
+		log.Error(err, "send PASS failed")
 		return err
 	}
 	log.Info("< PASS ***")
 
 	if err := irc.sendNick(nick); err != nil {
-		log.Error("send NICK failed", err)
+		log.Error(err, "send NICK failed")
 		return err
 	}
 
@@ -135,7 +135,7 @@ func (irc *Irc) sendPong(body string) {
 	}
 
 	if err := irc.write(msg); err != nil {
-		log.Error("irc.send PONG", err)
+		log.Error(err, "irc.send PONG")
 	}
 }
 
@@ -240,7 +240,7 @@ func (irc *Irc) write(message Message) error {
 	}
 
 	if message.Command != "PASS" && message.Command != "PONG" {
-		log.Info(fmt.Sprintf("< %s", message))
+		log.Info("< %s", message)
 	}
 	return nil
 }

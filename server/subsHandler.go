@@ -67,7 +67,7 @@ func (s *Server) lastSubView(apiEndpoint string) http.HandlerFunc {
 		})
 
 		if err != nil {
-			log.Fatal("Last Subs template did not parse", err)
+			log.Fatal(err, "Last Subs template did not parse")
 		}
 
 		data := RefreshingView{

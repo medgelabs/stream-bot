@@ -1,7 +1,6 @@
 package ws
 
 import (
-	"fmt"
 	log "medgebot/logger"
 	"net/url"
 	"sync"
@@ -87,7 +86,7 @@ func (ws *Connection) Read(dest []byte) (int, error) {
 	}
 
 	// On error, retry
-	log.Error("read ws", err)
+	log.Error(err, "read ws")
 	if ws.maxRetries > 0 {
 		for i := 1; i <= ws.maxRetries; i++ {
 			// Make sure we wait before retrying
@@ -96,7 +95,7 @@ func (ws *Connection) Read(dest []byte) (int, error) {
 
 			reconnErr := ws.Reconnect()
 			if reconnErr != nil {
-				log.Error(fmt.Sprintf("retry %d failed. Retry after %d", i, nextWait), reconnErr)
+				log.Error(reconnErr, "retry %d failed. Retry after %d", i, nextWait)
 				continue
 			}
 
@@ -105,7 +104,7 @@ func (ws *Connection) Read(dest []byte) (int, error) {
 				return copy(dest, message), nil
 			}
 
-			log.Error(fmt.Sprintf("retry %d failed. Retry after %d", i, nextWait), err)
+			log.Error(err, "retry %d failed. Retry after %d", i, nextWait)
 		}
 	}
 
@@ -136,7 +135,7 @@ func (ws *Connection) Write(data []byte) (int, error) {
 
 			reconnErr := ws.Reconnect()
 			if reconnErr != nil {
-				log.Error(fmt.Sprintf("retry %d failed. Retry after %d", i, nextWait), reconnErr)
+				log.Error(reconnErr, "retry %d failed. Retry after %d", i, nextWait)
 				continue
 			}
 
@@ -145,7 +144,7 @@ func (ws *Connection) Write(data []byte) (int, error) {
 				return len(data), nil
 			}
 
-			log.Error(fmt.Sprintf("retry %d failed. Retry after %d", i, nextWait), err)
+			log.Error(err, "retry %d failed. Retry after %d", i, nextWait)
 		}
 	}
 

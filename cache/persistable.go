@@ -3,7 +3,7 @@ package cache
 import (
 	"fmt"
 	"io"
-	"log"
+	log "medgebot/logger"
 	"os"
 	"strconv"
 	"strings"
@@ -147,7 +147,7 @@ func (cache *PersistableCache) rehydrate() error {
 
 		entry, err := cache.fromLine(line)
 		if err != nil {
-			log.Printf("ERROR: invalid cache line - %s | %v", line, err)
+			log.Error(err, "ERROR: invalid cache line - %s", line)
 			continue
 		}
 
@@ -204,7 +204,7 @@ func (cache *PersistableCache) fromLine(line string) (Entry, error) {
 // flushCache writes the state of l.cache to the given os.File
 func (cache *PersistableCache) flushCache() {
 	if cache.persistTarget == nil {
-		log.Println("WARN: flushCache called for a nil cache")
+		log.Warn("flushCache called for a nil cache")
 		return
 	}
 

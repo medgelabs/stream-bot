@@ -32,7 +32,7 @@ func main() {
 
 	conf, err := config.New(channel, configPath)
 	if err != nil {
-		log.Fatal("init config", err)
+		log.Fatal(err, "init config")
 	}
 
 	// Channel should be prefixed with # by default. Add it if missing
@@ -47,18 +47,18 @@ func main() {
 	// Initialize Secrets Store
 	store, err := secret.NewSecretStore(conf)
 	if err != nil {
-		log.Fatal("Create secret store", err)
+		log.Fatal(err, "Create secret store")
 	}
 
 	password, err := store.TwitchToken()
 	if err != nil {
-		log.Fatal("Get Twitch Token from store", err)
+		log.Fatal(err, "Get Twitch Token from store")
 	}
 
 	// IRC
 	nick := conf.Nick()
 	if nick == "" {
-		log.Fatal("config key - nick not found / empty", nil)
+		log.Fatal(nil, "config key - nick not found / empty")
 	}
 
 	ircConfig := irc.Config{
@@ -70,7 +70,7 @@ func main() {
 	ircWs := ws.NewWebSocket("wss", "irc-ws.chat.twitch.tv:443")
 	err = ircWs.Connect()
 	if err != nil {
-		log.Fatal("irc ws connect", err)
+		log.Fatal(err, "irc ws connect")
 	}
 
 	ircClient := irc.NewClient(ircWs)
@@ -81,7 +81,7 @@ func main() {
 
 	err = ircClient.Start(ircConfig)
 	if err != nil {
-		log.Fatal("start IRC", err)
+		log.Fatal(err, "start IRC")
 	}
 
 	// IRC is both a Client and a ChatClient
@@ -95,7 +95,7 @@ func main() {
 		pubSubWs := ws.NewWebSocket("wss", "pubsub-edge.twitch.tv")
 		err = pubSubWs.Connect()
 		if err != nil {
-			log.Fatal("pubsub ws connect", err)
+			log.Fatal(err, "pubsub ws connect")
 		}
 
 		pubsub := pubsub.NewClient(pubSubWs, conf.ChannelID(), password)
@@ -112,7 +112,7 @@ func main() {
 		for _, cmd := range cmds {
 			cmdTemplate, err := template.New(cmd.Prefix).Parse(cmd.Message)
 			if err != nil {
-				log.Fatal(fmt.Sprintf("parse known Command [%+v]", cmd), err)
+				log.Fatal(err, "parse known Command [%+v]", cmd)
 			}
 
 			cmd := bot.Command{
@@ -143,7 +143,7 @@ func main() {
 		greetMessageFormat := conf.GreetMessageFormat()
 		greetTempl, err := template.New("greeter").Parse(greetMessageFormat)
 		if err != nil {
-			log.Fatal("invalid Greeter message in config", err)
+			log.Fatal(err, "invalid Greeter message in config")
 		}
 
 		chatBot.RegisterGreeter(greeterCache, bot.NewHandlerTemplate(greetTempl))
@@ -155,7 +155,7 @@ func main() {
 
 		raidTempl, err := template.New("raids").Parse(raidMessageFormat)
 		if err != nil {
-			log.Fatal("invalid raid message in config", err)
+			log.Fatal(err, "invalid raid message in config")
 		}
 		chatBot.RegisterRaidHandler(
 			bot.NewHandlerTemplate(raidTempl), raidDelay)
@@ -166,7 +166,7 @@ func main() {
 
 		bitsTempl, err := template.New("bits").Parse(bitsMessageFormat)
 		if err != nil {
-			log.Fatal("invalid bits message in config", err)
+			log.Fatal(err, "invalid bits message in config")
 		}
 
 		chatBot.RegisterBitsHandler(
@@ -177,13 +177,13 @@ func main() {
 		subsMessageFormat := conf.SubsMessageFormat()
 		subsTempl, err := template.New("subs").Parse(subsMessageFormat)
 		if err != nil {
-			log.Fatal("invalid subs message in config", err)
+			log.Fatal(err, "invalid subs message in config")
 		}
 
 		giftSubsMessageFormat := conf.GiftSubsMessageFormat()
 		giftSubsTempl, err := template.New("giftsubs").Parse(giftSubsMessageFormat)
 		if err != nil {
-			log.Fatal("invalid subs message in config", err)
+			log.Fatal(err, "invalid subs message in config")
 		}
 
 		chatBot.RegisterSubsHandler(
@@ -198,7 +198,7 @@ func main() {
 
 	// Start the Bot only after all handlers are loaded
 	if err := chatBot.Start(); err != nil {
-		log.Fatal("bot connect", err)
+		log.Fatal(err, "bot connect")
 	}
 
 	// TODO should we have a setter for WS if AlertsEnabled?
@@ -206,7 +206,7 @@ func main() {
 	metricsCache := mustCreateFileCache("metrics.txt", 0)
 	srv := server.New(metricsCache, &ws)
 	if err := http.ListenAndServe(":8080", srv); err != nil {
-		log.Fatal("start HTTP server", err)
+		log.Fatal(err, "start HTTP server")
 	}
 }
 
@@ -214,12 +214,12 @@ func main() {
 func mustCreateFileCache(filepath string, keyExpirationSeconds int64) *cache.PersistableCache {
 	cacheFile, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
 	if err != nil {
-		log.Fatal("create cache file", err)
+		log.Fatal(err, "create cache file")
 	}
 
 	cache, err := cache.FilePersisted(cacheFile, keyExpirationSeconds)
 	if err != nil {
-		log.Fatal("read greeter cache file", err)
+		log.Fatal(err, "read greeter cache file")
 	}
 
 	return &cache

@@ -55,7 +55,7 @@ func (client *PubSub) Start() error {
 	go func() {
 		for {
 			if err := client.read(); err != nil {
-				log.Error("pubsub read", err)
+				log.Error(err, "pubsub read")
 				break
 			}
 		}
@@ -111,7 +111,7 @@ func (client *PubSub) ping() {
 
 			log.Info("PubSub: PING")
 			if err := client.write(ping); err != nil {
-				log.Error("pubsub ping", err)
+				log.Error(err, "pubsub ping")
 			}
 		}
 	}()
@@ -152,14 +152,14 @@ func (client *PubSub) read() error {
 		topic, err := jsonparser.GetString(buff, "data", "topic")
 		if err != nil {
 			msg := "pubsub data.topic not found in: " + str
-			log.Error(msg, err)
+			log.Error(err, msg)
 			return errors.Wrap(err, msg)
 		}
 
 		messageJSON, err := jsonparser.GetString(buff, "data", "message")
 		if err != nil {
 			msg := "pubsub data.message not found in: " + str
-			log.Error(msg, err)
+			log.Error(err, msg)
 			return errors.Wrap(err, msg)
 		}
 
@@ -170,7 +170,6 @@ func (client *PubSub) read() error {
 			err = json.Unmarshal([]byte(messageJSON), &channelPoints)
 			if err != nil {
 				msg := "pubsub data.message invalid: " + str
-				log.Error(msg, err)
 				return errors.Wrap(err, msg)
 			}
 

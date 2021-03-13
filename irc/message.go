@@ -2,7 +2,7 @@ package irc
 
 import (
 	"fmt"
-	"log"
+	log "medgebot/logger"
 	"strconv"
 	"strings"
 )
@@ -44,7 +44,7 @@ func (msg *Message) AddTag(tag, value string) {
 // Attempt to parse a line from IRC to a Message
 func parseIrcLine(message string) Message {
 	if strings.TrimSpace(message) == "" {
-		log.Println("WARN: attempt to parse empty IRC line")
+		log.Warn("attempt to parse empty IRC line")
 		return NewMessage()
 	}
 
@@ -120,35 +120,35 @@ func (msg Message) parseUserNoticeMessageType() int {
 	}
 }
 
-// Check if message is a Raid message
+// IsRaidMessage checks if message is a Raid message
 func (msg Message) IsRaidMessage() bool {
 	return msg.parseUserNoticeMessageType() == MSG_RAID
 }
 
-// Return the Raider for a Raid message
+// Raider returns the Raider for a Raid message
 func (msg Message) Raider() string {
 	return msg.Tag("msg-param-displayName")
 }
 
-// Return the Raid Size for a Raid message
+// RaidSize returns the Raid Size for a Raid message
 func (msg Message) RaidSize() int {
 	raidSizeStr := msg.Tag("msg-param-viewerCount")
 	raidSize, err := strconv.Atoi(raidSizeStr)
 	if err != nil {
-		log.Printf("ERROR: invalid raid size [%s], defaulting to 0", raidSizeStr)
+		log.Error(err, "invalid raid size [%s]", raidSizeStr)
 		return 0
 	}
 
 	return raidSize
 }
 
-// Check if message is a Bits message
+// IsBitsMessage checks if message is a Bits message
 func (msg Message) IsBitsMessage() bool {
 	_, err := strconv.Atoi(msg.Tag("bits"))
 	return err == nil
 }
 
-// Return the User that donated bits in a Bits message
+// BitsSender returns the User that donated bits in a Bits message
 func (msg Message) BitsSender() string {
 	return msg.Tag("display-name")
 }
@@ -158,7 +158,7 @@ func (msg Message) BitsAmount() int {
 	bitsStr := msg.Tag("bits")
 	amount, err := strconv.Atoi(bitsStr)
 	if err != nil {
-		log.Printf("ERROR: invalid bits [%s], defaulting to 0", bitsStr)
+		log.Error(err, "invalid bits [%s]", bitsStr)
 		return 0
 	}
 
@@ -180,7 +180,7 @@ func (msg Message) SubMonths() int {
 	monthsStr := msg.Tag("msg-param-cumulative-months")
 	months, err := strconv.Atoi(monthsStr)
 	if err != nil {
-		log.Printf("ERROR: invalid months [%s], defaulting to 0", monthsStr)
+		log.Error(err, "invalid months [%s]", monthsStr)
 		return 0
 	}
 

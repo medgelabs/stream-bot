@@ -1,8 +1,8 @@
 package bot
 
 import (
-	"log"
 	"medgebot/cache"
+	log "medgebot/logger"
 	"strings"
 	"time"
 )
@@ -13,12 +13,12 @@ func (bot *Bot) RegisterGreeter(cache cache.Cache, messageTemplate HandlerTempla
 		NewHandler(func(evt Event) {
 			username := strings.ToLower(evt.Sender)
 			if strings.TrimSpace(username) == "" {
-				log.Printf("Empty username for: %+v", evt)
+				log.Info("Empty username for: %+v", evt)
 				return
 			}
 
 			if cache.Absent(username) {
-				log.Printf("Never seen %s before", username)
+				log.Info("Never seen %s before", username)
 				time.Sleep(3 * time.Second)
 
 				bot.SendMessage(messageTemplate.Parse(evt))

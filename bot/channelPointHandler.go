@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"fmt"
 	log "medgebot/logger"
 )
 
@@ -9,7 +8,7 @@ import (
 func (bot *Bot) RegisterChannelPointHandler() {
 	bot.RegisterHandler(
 		NewHandler(func(evt Event) {
-			log.Info(fmt.Sprintf("%+v", evt))
+			log.Info("%+v", evt)
 		}),
 	)
 }
