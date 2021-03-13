@@ -13,6 +13,7 @@ import (
 	"medgebot/server"
 	"medgebot/ws"
 	"net/http"
+	"os"
 	"strings"
 	"text/template"
 )
@@ -128,18 +129,15 @@ func main() {
 	// if config.greeterEnabled() {
 	if conf.GreeterEnabled() || enableAll {
 		// Cache for the auto greeter
-		cache, err := cache.New(conf)
-		if err != nil {
-			log.Fatal("create cache", err)
-		}
+		greeterCache := mustCreateFileCache("greeter.txt", conf.CacheExpirationTime())
 
 		// pre-seed names we want ignored
-		cache.Put("streamlabs", "")
-		cache.Put("nightbot", "")
-		cache.Put("ranaebot", "")
-		cache.Put("soundalerts", "")
-		cache.Put("jtv", "")
-		cache.Put(strings.TrimPrefix(channel, "#"), "") // Prevent greeting the broadcaster
+		greeterCache.Put("streamlabs", "")
+		greeterCache.Put("nightbot", "")
+		greeterCache.Put("ranaebot", "")
+		greeterCache.Put("soundalerts", "")
+		greeterCache.Put("jtv", "")
+		greeterCache.Put(strings.TrimPrefix(channel, "#"), "") // Prevent greeting the broadcaster
 
 		// Greeter config
 		greetMessageFormat := conf.GreetMessageFormat()
@@ -148,7 +146,7 @@ func main() {
 			log.Fatal("invalid Greeter message in config", err)
 		}
 
-		chatBot.RegisterGreeter(cache, bot.NewHandlerTemplate(greetTempl))
+		chatBot.RegisterGreeter(greeterCache, bot.NewHandlerTemplate(greetTempl))
 	}
 
 	if conf.RaidsEnabled() || enableAll {
@@ -205,9 +203,24 @@ func main() {
 
 	// TODO should we have a setter for WS if AlertsEnabled?
 	// Start HTTP server
-	metricsCache, _ := cache.InMemory(0)
-	srv := server.New(&metricsCache, &ws)
+	metricsCache := mustCreateFileCache("metrics.txt", 0)
+	srv := server.New(metricsCache, &ws)
 	if err := http.ListenAndServe(":8080", srv); err != nil {
 		log.Fatal("start HTTP server", err)
 	}
+}
+
+// Create a PersistableCache backed by a file. Panics if it cannot
+func mustCreateFileCache(filepath string, keyExpirationSeconds int64) *cache.PersistableCache {
+	cacheFile, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
+	if err != nil {
+		log.Fatal("create cache file", err)
+	}
+
+	cache, err := cache.FilePersisted(cacheFile, keyExpirationSeconds)
+	if err != nil {
+		log.Fatal("read greeter cache file", err)
+	}
+
+	return &cache
 }

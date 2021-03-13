@@ -41,7 +41,7 @@ medgelabs:
       - prefix: "!gear"
         message: "vim + coc for completion. OLKB Preonic keyboard with Kailh Brown switches. Logitech MX Master 3 mouse. Yeti Blue on a Blue Boom stand. Logitech C930 camera. All connected to 2018 Mac Mini. Pure OBS for streaming setup. Backdrops by the lovely @SorceryAndSarcasm!"
       - prefix: "!project"
-        message: "Twitch Chat Bot in Golang!"
+        message: "Twitch Chat Bot in Golang! https://github.com/medgelabs/stream-bot"
       - prefix: "!discord"
         message: "Feel free to join the Lab Discord! https://discord.gg/hprsUq9"
       - prefix: "!dotfiles"

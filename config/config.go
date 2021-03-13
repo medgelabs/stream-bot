@@ -47,7 +47,7 @@ func (c *Config) Nick() string {
 	return nick
 }
 
-// Cache returns the desired Cache type, which should match the cache/cacheFactory.go enum
+// Cache returns the desired Cache type, which should match the cache/cache.go enum
 func (c *Config) Cache() string {
 	val := c.config.GetString(c.key("cacheType"))
 	return val

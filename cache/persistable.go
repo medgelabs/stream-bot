@@ -118,44 +118,6 @@ func (cache *PersistableCache) Absent(key string) bool {
 	return !ok || cache.expired(entry.timestamp)
 }
 
-// line returns a string representation of a formatted file line
-func (cache *PersistableCache) line(key string, entry Entry) string {
-	var buf strings.Builder
-	buf.WriteString(key + cache.fieldSeparator)
-	buf.WriteString(entry.value + cache.fieldSeparator)
-	buf.WriteString(fmt.Sprintf("%d", entry.timestamp))
-	buf.WriteString(cache.lineSeparator)
-	return buf.String()
-}
-
-// fromLine extracts an Entry from a cache persistence line
-func (cache *PersistableCache) fromLine(line string) (Entry, error) {
-	// Constants regarding line composition
-	entryLineSize := 3
-	keyIdx := 0
-	valueIdx := 1
-	tsIdx := 2
-
-	tokens := strings.Split(line, cache.fieldSeparator)
-
-	if len(tokens) != entryLineSize {
-		return Entry{}, errors.Errorf("Invalid line length: %d", len(tokens))
-	}
-
-	key := tokens[keyIdx]
-	value := tokens[valueIdx]
-	ts, err := strconv.ParseInt(tokens[tsIdx], 10, 64)
-	if err != nil {
-		return Entry{}, errors.Errorf("invalid timestamp for key %s - %s", key, tokens[tsIdx])
-	}
-
-	return Entry{
-		key:       key,
-		value:     value,
-		timestamp: ts,
-	}, nil
-}
-
 // expired checks if the given key's timestamp is beyond the expiration threshold.
 // Always returns false if an expiration is not set
 func (cache *PersistableCache) expired(entryTs int64) bool {
@@ -199,6 +161,44 @@ func (cache *PersistableCache) rehydrate() error {
 	}
 
 	return nil
+}
+
+// line returns a string representation of a formatted file line
+func (cache *PersistableCache) line(key string, entry Entry) string {
+	var buf strings.Builder
+	buf.WriteString(key + cache.fieldSeparator)
+	buf.WriteString(entry.value + cache.fieldSeparator)
+	buf.WriteString(fmt.Sprintf("%d", entry.timestamp))
+	buf.WriteString(cache.lineSeparator)
+	return buf.String()
+}
+
+// fromLine extracts an Entry from a cache persistence line
+func (cache *PersistableCache) fromLine(line string) (Entry, error) {
+	// Constants regarding line composition
+	entryLineSize := 3
+	keyIdx := 0
+	valueIdx := 1
+	tsIdx := 2
+
+	tokens := strings.Split(line, cache.fieldSeparator)
+
+	if len(tokens) != entryLineSize {
+		return Entry{}, errors.Errorf("Invalid line length: %d", len(tokens))
+	}
+
+	key := tokens[keyIdx]
+	value := tokens[valueIdx]
+	ts, err := strconv.ParseInt(tokens[tsIdx], 10, 64)
+	if err != nil {
+		return Entry{}, errors.Errorf("invalid timestamp for key %s - %s", key, tokens[tsIdx])
+	}
+
+	return Entry{
+		key:       key,
+		value:     value,
+		timestamp: ts,
+	}, nil
 }
 
 // flushCache writes the state of l.cache to the given os.File
