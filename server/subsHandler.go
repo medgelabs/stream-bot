@@ -24,7 +24,7 @@ func (s *Server) fetchLastSub() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		str, _ := s.viewerMetricsStore.Get("lastSub")
+		str, _ := s.viewerMetricsStore.Get(viewer.LastSub)
 		lastSub, err := viewer.FromString(str)
 
 		if err != nil {

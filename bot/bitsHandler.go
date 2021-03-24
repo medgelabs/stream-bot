@@ -20,7 +20,7 @@ func (bot *Bot) RegisterBitsHandler(messageTemplate HandlerTemplate, metricsCach
 					Name:   evt.Sender,
 					Amount: evt.Amount,
 				}
-				metricsCache.Put("lastBits", metric.String())
+				metricsCache.Put(viewer.LastBits, metric.String())
 			}
 		}),
 	)

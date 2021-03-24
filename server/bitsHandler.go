@@ -18,7 +18,7 @@ func (s *Server) fetchLastBits() http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		str, _ := s.viewerMetricsStore.Get("lastBits")
+		str, _ := s.viewerMetricsStore.Get(viewer.LastBits)
 		lastBits, err := viewer.FromString(str)
 
 		if err != nil {

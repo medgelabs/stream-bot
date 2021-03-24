@@ -17,7 +17,7 @@ func (bot *Bot) RegisterSubsHandler(subsTemplate, giftSubsTemplate HandlerTempla
 					Name:   evt.Sender,
 					Amount: evt.Amount,
 				}
-				metricsCache.Put("lastSub", metric.String())
+				metricsCache.Put(viewer.LastSub, metric.String())
 			} else if evt.IsGiftSubEvent() {
 				bot.SendMessage(giftSubsTemplate.Parse(evt))
 			} else {
