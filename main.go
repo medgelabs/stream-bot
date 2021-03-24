@@ -55,6 +55,9 @@ func main() {
 		log.Fatal(err, "Get Twitch Token from store")
 	}
 
+	// Cache for various stream metrics
+	metricsCache := mustCreateFileCache("metrics.txt", 0)
+
 	// IRC
 	nick := conf.Nick()
 	if nick == "" {
@@ -187,7 +190,8 @@ func main() {
 		}
 
 		chatBot.RegisterSubsHandler(
-			bot.NewHandlerTemplate(subsTempl), bot.NewHandlerTemplate(giftSubsTempl))
+			bot.NewHandlerTemplate(subsTempl), bot.NewHandlerTemplate(giftSubsTempl),
+			metricsCache)
 	}
 
 	// Alerts link between the Bot and the Web API
@@ -203,8 +207,9 @@ func main() {
 
 	// TODO should we have a setter for WS if AlertsEnabled?
 	// Start HTTP server
-	metricsCache := mustCreateFileCache("metrics.txt", 0)
-	srv := server.New(metricsCache, &ws)
+	debugClient := server.DebugClient{}
+	chatBot.RegisterClient(&debugClient)
+	srv := server.New(metricsCache, &ws, &debugClient)
 	if err := http.ListenAndServe(":8080", srv); err != nil {
 		log.Fatal(err, "start HTTP server")
 	}

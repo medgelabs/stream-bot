@@ -3,7 +3,6 @@ package viewer
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/pkg/errors"
 )
 
 // Metric represents a metric value tied to a Viewer
@@ -19,12 +18,12 @@ func (m Metric) String() string {
 	return buf.String()
 }
 
-// FromCache attempts to convert a string to a Metric
-func FromCache(line string) (Metric, error) {
+// FromString attempts to convert a string (created by Metric.String()) to a Metric
+func FromString(line string) (Metric, error) {
 	var metric Metric
 
 	if len(line) <= 0 {
-		return Metric{}, errors.New("Empty line")
+		return Metric{}, nil
 	}
 
 	err := json.Unmarshal([]byte(line), &metric)

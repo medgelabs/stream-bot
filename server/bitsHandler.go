@@ -10,40 +10,34 @@ import (
 	"sync"
 )
 
-// RefreshingView represents a view that polls for data to be interpolated
-// on the View template
-type RefreshingView struct {
-	ApiEndpoint string
-}
-
-// fetchLastSub for the lastSubView
-func (s *Server) fetchLastSub() http.HandlerFunc {
+// fetchLastBits for the lastBitsView
+func (s *Server) fetchLastBits() http.HandlerFunc {
 	type response struct {
 		Name   string `json:"name"`
 		Months int    `json:"months"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		str, _ := s.viewerMetricsStore.Get("lastSub")
-		lastSub, err := viewer.FromString(str)
+		str, _ := s.viewerMetricsStore.Get("lastBits")
+		lastBits, err := viewer.FromString(str)
 
 		if err != nil {
-			logger.Error(err, "lastSub cache fetch")
+			logger.Error(err, "lastBits cache fetch")
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 
 		json.NewEncoder(w).Encode(response{
-			Name:   lastSub.Name,
-			Months: lastSub.Amount,
+			Name:   lastBits.Name,
+			Months: lastBits.Amount,
 		})
 	}
 }
 
-// lastSubView returns the refreshing HTML page to grab the last Subscriber
-func (s *Server) lastSubView(apiEndpoint string) http.HandlerFunc {
+// lastBitsView returns the refreshing HTML page to grab the last Bitsscriber
+func (s *Server) lastBitsView(apiEndpoint string) http.HandlerFunc {
 	var (
 		onlyOnce sync.Once
-		tmpl     *template.Template = template.New("lastSubsTemplate")
+		tmpl     *template.Template = template.New("lastBitsTemplate")
 		err      error
 	)
 
@@ -64,7 +58,7 @@ func (s *Server) lastSubView(apiEndpoint string) http.HandlerFunc {
 						  let content = document.querySelector("section.content")
 						  fetch("{{.ApiEndpoint}}")
 						    .then(r => r.json())
-							.then(r => content.innerHTML = "Last Sub: " + r.name)
+							.then(r => content.innerHTML = "Last Bits: " + r.name)
 							.catch(err => content.innerHTML = err)
 						}
 					 </script>
@@ -73,7 +67,7 @@ func (s *Server) lastSubView(apiEndpoint string) http.HandlerFunc {
 		})
 
 		if err != nil {
-			log.Fatal(err, "Last Subs template did not parse")
+			log.Fatal(err, "Last Bits template did not parse")
 		}
 
 		data := RefreshingView{

@@ -2,6 +2,7 @@ package bot
 
 import (
 	"medgebot/bot/bottest"
+	"medgebot/cache"
 	"testing"
 )
 
@@ -14,11 +15,13 @@ func TestSubHandler(t *testing.T) {
 	bot := New()
 	checker := NewTestChatClient()
 	bot.SetChatClient(checker)
+	cache, _ := cache.InMemory(0)
 
 	// Initialize Handler
 	bot.RegisterSubsHandler(
 		HandlerTemplate{template: subsTmpl},
-		HandlerTemplate{template: giftSubTmpl})
+		HandlerTemplate{template: giftSubTmpl},
+		&cache)
 
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()
@@ -41,11 +44,12 @@ func TestGiftSubHandler(t *testing.T) {
 	bot := New()
 	checker := NewTestChatClient()
 	bot.SetChatClient(checker)
+	cache, _ := cache.InMemory(0)
 
 	// Initialize Handler
 	bot.RegisterSubsHandler(
 		HandlerTemplate{template: subsTmpl},
-		HandlerTemplate{template: giftSubTmpl})
+		HandlerTemplate{template: giftSubTmpl}, &cache)
 
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()
@@ -68,11 +72,12 @@ func TestSubHandlerIgnoresInvalidEvents(t *testing.T) {
 	bot := New()
 	checker := NewTestChatClient()
 	bot.SetChatClient(checker)
+	cache, _ := cache.InMemory(0)
 
 	// Initialize Handler
 	bot.RegisterSubsHandler(
 		HandlerTemplate{template: subsTmpl},
-		HandlerTemplate{template: giftSubTmpl})
+		HandlerTemplate{template: giftSubTmpl}, &cache)
 
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()

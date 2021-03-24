@@ -101,11 +101,12 @@ func (cache *PersistableCache) Put(key, value string) error {
 	// Add to cache and write to persistence immediately
 	cache.cache[key] = entry
 
+	// TODO this isn't failing when the File disappears?
 	if cache.persistent {
 		line := cache.line(key, entry)
 		_, err := cache.persistTarget.Write([]byte(line))
 		if err != nil {
-			return errors.Wrap(err, "ERROR: failed to persist "+key+"")
+			return errors.Wrap(err, "failed to persist "+key+"")
 		}
 	}
 
@@ -209,10 +210,16 @@ func (cache *PersistableCache) flushCache() {
 	}
 
 	// Truncate(0) clears the file contents
-	cache.persistTarget.Truncate(0)
+	err := cache.persistTarget.Truncate(0)
+	if err != nil {
+		log.Error(err, "cache flush - truncate")
+	}
 
 	for key, val := range cache.cache {
 		line := cache.line(key, val)
-		cache.persistTarget.Write([]byte(line))
+		_, err := cache.persistTarget.Write([]byte(line))
+		if err != nil {
+			log.Error(err, "cache flush line - %s", line)
+		}
 	}
 }
