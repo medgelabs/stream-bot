@@ -29,10 +29,6 @@ func New(metricStore cache.Cache, alertWebSocket *bot.WriteOnlyUnsafeWebSocket, 
 	return srv
 }
 
-/*
-const socket = new WebSocket(`wss://${window.location.hostname}/chat`)
-*/
-
 func (s *Server) routes() {
 	// TODO pull from config
 	baseURL := "http://localhost:8080"
@@ -46,6 +42,7 @@ func (s *Server) routes() {
 	// DEBUG - trigger various events for testing
 	// TODO how do secure when deploy?
 	s.router.HandleFunc("/debug/sub", s.debugSub(s.debugClient))
+	s.router.HandleFunc("/debug/bit", s.debugBit(s.debugClient))
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

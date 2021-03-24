@@ -173,7 +173,7 @@ func main() {
 		}
 
 		chatBot.RegisterBitsHandler(
-			bot.NewHandlerTemplate(bitsTempl))
+			bot.NewHandlerTemplate(bitsTempl), metricsCache)
 	}
 
 	if conf.SubsEnabled() || enableAll {
