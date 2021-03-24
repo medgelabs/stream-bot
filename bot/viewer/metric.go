@@ -3,7 +3,15 @@ package viewer
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/pkg/errors"
+	"strings"
+)
+
+const (
+	// LastSub is the Cache key for the last subscriber
+	LastSub = "lastSub"
+
+	// LastBits is the Cache key for the last bits donation
+	LastBits = "lastBits"
 )
 
 // Metric represents a metric value tied to a Viewer
@@ -16,15 +24,15 @@ type Metric struct {
 func (m Metric) String() string {
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(m)
-	return buf.String()
+	return strings.TrimSuffix(buf.String(), "\n")
 }
 
-// FromCache attempts to convert a string to a Metric
-func FromCache(line string) (Metric, error) {
+// FromString attempts to convert a string (created by Metric.String()) to a Metric
+func FromString(line string) (Metric, error) {
 	var metric Metric
 
 	if len(line) <= 0 {
-		return Metric{}, errors.New("Empty line")
+		return Metric{}, nil
 	}
 
 	err := json.Unmarshal([]byte(line), &metric)
