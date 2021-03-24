@@ -168,10 +168,15 @@ func (cache *PersistableCache) rehydrate() error {
 func (cache *PersistableCache) line(key string, entry Entry) string {
 	var buf strings.Builder
 	buf.WriteString(key + cache.fieldSeparator)
-	buf.WriteString(entry.value + cache.fieldSeparator)
+	buf.WriteString(cache.sanitize(entry.value) + cache.fieldSeparator)
 	buf.WriteString(fmt.Sprintf("%d", entry.timestamp))
 	buf.WriteString(cache.lineSeparator)
 	return buf.String()
+}
+
+// sanitize removes all newline characters from a value to prevent the line break bug
+func (cache *PersistableCache) sanitize(value string) string {
+	return strings.ReplaceAll(value, "\n", " ")
 }
 
 // fromLine extracts an Entry from a cache persistence line

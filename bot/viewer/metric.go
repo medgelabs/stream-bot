@@ -3,6 +3,7 @@ package viewer
 import (
 	"bytes"
 	"encoding/json"
+	"strings"
 )
 
 // Metric represents a metric value tied to a Viewer
@@ -15,7 +16,7 @@ type Metric struct {
 func (m Metric) String() string {
 	var buf bytes.Buffer
 	json.NewEncoder(&buf).Encode(m)
-	return buf.String()
+	return strings.TrimSuffix(buf.String(), "\n")
 }
 
 // FromString attempts to convert a string (created by Metric.String()) to a Metric
