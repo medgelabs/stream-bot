@@ -107,6 +107,9 @@ func main() {
 		chatBot.RegisterClient(pubsub)
 	}
 
+	// Shoutout Command
+	chatBot.HandleShoutoutCommand()
+
 	// Feature Toggles
 	if conf.CommandsEnabled() || enableAll {
 		cmds := conf.KnownCommands()
