@@ -120,10 +120,12 @@ func (c *Config) CommandsEnabled() bool {
 // KnownCommand returns a slice of map[prefix]message pairs, to be parsed elsewhere,
 // that represent commands the Bot responds to
 type KnownCommand struct {
-	Prefix  string `mapstructure:"prefix"`
-	Message string `mapstructure:"message"`
+	Prefix   string `mapstructure:"prefix"`
+	Message  string `mapstructure:"message"`
+	AliasFor string `mapstructure:"aliasFor"`
 }
 
+// KnownCommands returns a slice of commands the Bot knows how to respond to
 func (c *Config) KnownCommands() []KnownCommand {
 	var commands []KnownCommand
 	c.config.UnmarshalKey(c.key("commands.known"), &commands)

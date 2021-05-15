@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	log "medgebot/logger"
 	"strings"
 )
 
@@ -15,6 +16,8 @@ func (bot *Bot) HandleShoutoutCommand() {
 				if !strings.HasPrefix(contents, "!so") {
 					return
 				}
+
+				log.Info("Handling shoutout: %+v", evt)
 
 				tokens := strings.Split(contents, " ")
 				broadcaster := strings.TrimPrefix(tokens[1], "@")
