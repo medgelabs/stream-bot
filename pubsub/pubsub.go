@@ -130,8 +130,9 @@ func (client *PubSub) read() error {
 		return errors.New("Empty message buffer")
 	}
 
-	// Trim null bytes for print cleanliness
-	str := string(bytes.Trim(buff, "\x00"))
+	// Remove NULL bytes (bytes left over in the buffer), courtesy of ReallyFrank!
+	buff = buff[:len]
+	str := string(buff)
 	log.Info("PubSub: " + str)
 
 	// First, we extract the type to see what we're receiving
