@@ -3,7 +3,6 @@ package bot
 import (
 	"fmt"
 	"math/rand"
-	log "medgebot/logger"
 	"strings"
 	"time"
 )
@@ -27,8 +26,6 @@ func (bot *Bot) HandleCommands(knownCommands []Command) {
 		NewHandler(func(evt Event) {
 			if evt.IsChatEvent() {
 				contents := evt.Message
-
-				log.Info("Checking for commands in: %+v", evt)
 
 				// 1: check if the chat event is a Command message
 				// 2: Is the command an Alias? If so - alter contents and send back through the bot
