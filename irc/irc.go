@@ -1,7 +1,6 @@
 package irc
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"medgebot/bot"
@@ -173,10 +172,9 @@ func (irc *Irc) read() error {
 		return errors.New("Empty message buffer")
 	}
 
-	// Remove NULL bytes (bytes left over in the buffer)
-	str := string(
-		bytes.Trim(buff, "\x00"),
-	)
+	// Remove NULL bytes (bytes left over in the buffer), courtesy of ReallyFrank!
+	buff = buff[:len]
+	str := string(buff)
 
 	// trace inbound IRC message
 	log.Info(str)

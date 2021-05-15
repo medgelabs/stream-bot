@@ -12,7 +12,7 @@ func (bot *Bot) HandleShoutoutCommand() {
 			if evt.IsChatEvent() {
 				contents := evt.Message
 
-				if !strings.HasPrefix(contents, "!lso") {
+				if !strings.HasPrefix(contents, "!so") {
 					return
 				}
 
