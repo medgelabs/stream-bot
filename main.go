@@ -123,6 +123,8 @@ func main() {
 
 			cmd := bot.Command{
 				Prefix:          cmd.Prefix,
+				IsAlias:         cmd.AliasFor != "",
+				AliasFor:        cmd.AliasFor,
 				MessageTemplate: bot.NewHandlerTemplate(cmdTemplate),
 			}
 

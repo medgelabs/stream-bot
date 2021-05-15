@@ -58,6 +58,11 @@ func (bot *Bot) sendEvent(evt Event) {
 	bot.chatClient.Channel() <- evt
 }
 
+// receiveEvent is a way for Handlers to re-queue Events to be reprocessed. Ex: alias commands
+func (bot *Bot) receiveEvent(evt Event) {
+	bot.events <- evt
+}
+
 // Start the bot and listen for incoming events
 func (bot *Bot) Start() error {
 	// Ensure single concurrent reader, per doc requirements
@@ -66,7 +71,7 @@ func (bot *Bot) Start() error {
 	return nil
 }
 
-// PrivMsg sends a message to the given channel, without prefix
+// SendMessage sends a message to the given channel, without prefix
 func (bot *Bot) SendMessage(message string) {
 	// TODO do we ever need to send empty messages?
 	if strings.TrimSpace(message) == "" {
