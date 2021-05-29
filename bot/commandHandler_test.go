@@ -2,6 +2,7 @@ package bot
 
 import (
 	"medgebot/bot/bottest"
+	"medgebot/cache"
 	"strings"
 	"testing"
 )
@@ -9,7 +10,8 @@ import (
 // Bits handler through the Bot
 func TestCommandHandler(t *testing.T) {
 	// Initialize Bot
-	bot := New()
+	cache, _ := cache.InMemory(0)
+	bot := New(&cache)
 	checker := NewTestChatClient()
 	bot.SetChatClient(checker)
 
@@ -39,7 +41,8 @@ func TestCommandHandler(t *testing.T) {
 
 func TestCoinThrow(t *testing.T) {
 	// Initialize Bot
-	bot := New()
+	cache, _ := cache.InMemory(0)
+	bot := New(&cache)
 	checker := NewTestChatClient()
 	bot.SetChatClient(checker)
 	bot.HandleCommands([]Command{})
@@ -84,7 +87,8 @@ func TestCoinThrow(t *testing.T) {
 
 func TestCommandHandlerIgnoresRegularChatMessages(t *testing.T) {
 	// Initialize Bot
-	bot := New()
+	cache, _ := cache.InMemory(0)
+	bot := New(&cache)
 	checker := NewTestChatClient()
 	bot.SetChatClient(checker)
 
@@ -115,7 +119,8 @@ func TestCommandHandlerIgnoresRegularChatMessages(t *testing.T) {
 
 func TestCommandHandlerIgnoresInvalidEvents(t *testing.T) {
 	// Initialize Bot
-	bot := New()
+	cache, _ := cache.InMemory(0)
+	bot := New(&cache)
 	checker := NewTestChatClient()
 	bot.SetChatClient(checker)
 

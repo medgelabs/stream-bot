@@ -3,12 +3,11 @@ package bot
 import (
 	"fmt"
 	"medgebot/bot/viewer"
-	"medgebot/cache"
 	log "medgebot/logger"
 )
 
 // RegisterBitsHandler adds the Bits handler logic to the Bot
-func (bot *Bot) RegisterBitsHandler(messageTemplate HandlerTemplate, metricsCache cache.Cache) {
+func (bot *Bot) RegisterBitsHandler(messageTemplate HandlerTemplate) {
 	bot.RegisterHandler(
 		NewHandler(func(evt Event) {
 			if evt.IsBitsEvent() {
@@ -20,7 +19,7 @@ func (bot *Bot) RegisterBitsHandler(messageTemplate HandlerTemplate, metricsCach
 					Name:   evt.Sender,
 					Amount: evt.Amount,
 				}
-				metricsCache.Put(viewer.LastBits, metric.String())
+				bot.metricsCache.Put(viewer.LastBits, metric.String())
 			}
 		}),
 	)

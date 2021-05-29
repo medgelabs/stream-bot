@@ -15,6 +15,9 @@ const (
 
 	// LastBits is the Cache key for the last bits donation
 	LastBits = "lastBits"
+
+	// LastRaider is the Cache key for the last Raiding party
+	LastRaider = "lastRaider"
 )
 
 // Metric represents a metric value tied to a Viewer

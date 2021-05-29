@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+	"medgebot/bot/viewer"
 	log "medgebot/logger"
 	"time"
 )
@@ -18,6 +19,12 @@ func (bot *Bot) RegisterRaidHandler(messageTemplate HandlerTemplate, delaySecond
 				}
 
 				bot.SendMessage(messageTemplate.Parse(evt))
+
+				metric := viewer.Metric{
+					Name:   evt.Sender,
+					Amount: evt.Amount,
+				}
+				bot.metricsCache.Put(viewer.LastRaider, metric.String())
 			}
 		}),
 	)

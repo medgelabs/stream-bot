@@ -2,6 +2,7 @@ package bot
 
 import (
 	"errors"
+	"medgebot/cache"
 	"strings"
 	"sync"
 )
@@ -22,14 +23,19 @@ type Bot struct {
 	// events
 	events    chan Event
 	listening bool
+
+	// Cache for various handler metrics
+	metricsCache cache.Cache
 }
 
-func New() Bot {
+// New produces a newly instantiated Bot
+func New(metricsCache cache.Cache) Bot {
 	return Bot{
-		consumers: make([]Handler, 0),
-		clients:   make([]Client, 0),
-		events:    make(chan Event, 0),
-		listening: false,
+		consumers:    make([]Handler, 0),
+		clients:      make([]Client, 0),
+		events:       make(chan Event, 0),
+		listening:    false,
+		metricsCache: metricsCache,
 	}
 }
 

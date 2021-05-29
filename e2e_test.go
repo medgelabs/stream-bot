@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"medgebot/bot"
 	"medgebot/bot/bottest"
+	"medgebot/cache"
 	"medgebot/irc"
 	"medgebot/irc/irctest"
 	"medgebot/ws/wstest"
@@ -28,7 +29,8 @@ func TestRaids(t *testing.T) {
 		t.Fatalf("Failed to start IRC client: %v", err)
 	}
 
-	chatBot := bot.New()
+	cache, _ := cache.InMemory(0)
+	chatBot := bot.New(&cache)
 	chatBot.RegisterClient(ircClient)
 	chatBot.SetChatClient(ircClient)
 

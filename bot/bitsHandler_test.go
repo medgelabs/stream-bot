@@ -9,16 +9,16 @@ import (
 // Bits handler through the Bot
 func TestBitsHandler(t *testing.T) {
 	// Initialize Bot
-	bot := New()
+	cache, _ := cache.InMemory(0)
+	bot := New(&cache)
 	checker := NewTestChatClient()
 	bot.SetChatClient(checker)
-	cache, _ := cache.InMemory(0)
 
 	// Initialize Bits Handler
 	tmpl := bottest.MakeTemplate("testBits", "Thanks for the {{.Amount}} bits {{.Sender}}")
 	bot.RegisterBitsHandler(HandlerTemplate{
 		template: tmpl,
-	}, &cache)
+	})
 
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()
@@ -38,16 +38,16 @@ func TestBitsHandler(t *testing.T) {
 
 func TestBitsHandlerIgnoresInvalidEvents(t *testing.T) {
 	// Initialize Bot
-	bot := New()
+	cache, _ := cache.InMemory(0)
+	bot := New(&cache)
 	checker := NewTestChatClient()
 	bot.SetChatClient(checker)
-	cache, _ := cache.InMemory(0)
 
 	// Initialize Bits Handler
 	tmpl := bottest.MakeTemplate("testBits", "Thanks for the {{.Amount}} bits {{.Sender}}")
 	bot.RegisterBitsHandler(HandlerTemplate{
 		template: tmpl,
-	}, &cache)
+	})
 
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()

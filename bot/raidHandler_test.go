@@ -2,13 +2,15 @@ package bot
 
 import (
 	"medgebot/bot/bottest"
+	"medgebot/cache"
 	"testing"
 )
 
 // Raid handler through the Bot
 func TestRaidHandler(t *testing.T) {
 	// Initialize Bot
-	bot := New()
+	cache, _ := cache.InMemory(0)
+	bot := New(&cache)
 	checker := NewTestChatClient()
 	bot.SetChatClient(checker)
 
@@ -36,7 +38,8 @@ func TestRaidHandler(t *testing.T) {
 
 func TestRaidHandlerIgnoresInvalidEvents(t *testing.T) {
 	// Initialize Bot
-	bot := New()
+	cache, _ := cache.InMemory(0)
+	bot := New(&cache)
 	checker := NewTestChatClient()
 	bot.SetChatClient(checker)
 

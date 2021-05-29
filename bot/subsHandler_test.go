@@ -12,16 +12,15 @@ var giftSubTmpl = bottest.MakeTemplate("testGiftSubs", "{{.Sender}} gifted a sub
 // Subs handler through the Bot
 func TestSubHandler(t *testing.T) {
 	// Initialize Bot
-	bot := New()
+	cache, _ := cache.InMemory(0)
+	bot := New(&cache)
 	checker := NewTestChatClient()
 	bot.SetChatClient(checker)
-	cache, _ := cache.InMemory(0)
 
 	// Initialize Handler
 	bot.RegisterSubsHandler(
 		HandlerTemplate{template: subsTmpl},
-		HandlerTemplate{template: giftSubTmpl},
-		&cache)
+		HandlerTemplate{template: giftSubTmpl})
 
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()
@@ -41,15 +40,15 @@ func TestSubHandler(t *testing.T) {
 
 func TestGiftSubHandler(t *testing.T) {
 	// Initialize Bot
-	bot := New()
+	cache, _ := cache.InMemory(0)
+	bot := New(&cache)
 	checker := NewTestChatClient()
 	bot.SetChatClient(checker)
-	cache, _ := cache.InMemory(0)
 
 	// Initialize Handler
 	bot.RegisterSubsHandler(
 		HandlerTemplate{template: subsTmpl},
-		HandlerTemplate{template: giftSubTmpl}, &cache)
+		HandlerTemplate{template: giftSubTmpl})
 
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()
@@ -69,15 +68,15 @@ func TestGiftSubHandler(t *testing.T) {
 
 func TestSubHandlerIgnoresInvalidEvents(t *testing.T) {
 	// Initialize Bot
-	bot := New()
+	cache, _ := cache.InMemory(0)
+	bot := New(&cache)
 	checker := NewTestChatClient()
 	bot.SetChatClient(checker)
-	cache, _ := cache.InMemory(0)
 
 	// Initialize Handler
 	bot.RegisterSubsHandler(
 		HandlerTemplate{template: subsTmpl},
-		HandlerTemplate{template: giftSubTmpl}, &cache)
+		HandlerTemplate{template: giftSubTmpl})
 
 	// This must happen after Handler registration, else data race occurs
 	bot.Start()

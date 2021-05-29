@@ -40,8 +40,11 @@ func main() {
 		channel = fmt.Sprintf("#%s", channel)
 	}
 
+	// Cache for various stream metrics
+	metricsCache := mustCreateFileCache("metrics.txt", 0)
+
 	// Initialize desired state for the bot
-	chatBot := bot.New()
+	chatBot := bot.New(metricsCache)
 	chatBot.RegisterReadLogger()
 
 	// Initialize Secrets Store
@@ -54,9 +57,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err, "Get Twitch Token from store")
 	}
-
-	// Cache for various stream metrics
-	metricsCache := mustCreateFileCache("metrics.txt", 0)
 
 	// IRC
 	nick := conf.Nick()
@@ -178,7 +178,7 @@ func main() {
 		}
 
 		chatBot.RegisterBitsHandler(
-			bot.NewHandlerTemplate(bitsTempl), metricsCache)
+			bot.NewHandlerTemplate(bitsTempl))
 	}
 
 	if conf.SubsEnabled() || enableAll {
@@ -195,8 +195,7 @@ func main() {
 		}
 
 		chatBot.RegisterSubsHandler(
-			bot.NewHandlerTemplate(subsTempl), bot.NewHandlerTemplate(giftSubsTempl),
-			metricsCache)
+			bot.NewHandlerTemplate(subsTempl), bot.NewHandlerTemplate(giftSubsTempl))
 	}
 
 	// Alerts link between the Bot and the Web API
