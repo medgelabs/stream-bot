@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/go-chi/chi/v5 v5.0.3 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/magiconair/properties v1.8.4 // indirect

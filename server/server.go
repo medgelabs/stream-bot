@@ -4,11 +4,13 @@ import (
 	"medgebot/bot"
 	"medgebot/cache"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // Server REST API
 type Server struct {
-	router             *http.ServeMux
+	router             *chi.Mux
 	viewerMetricsStore cache.Cache
 	alertWebSocket     *bot.WriteOnlyUnsafeWebSocket
 	debugClient        *DebugClient
@@ -17,7 +19,7 @@ type Server struct {
 // New returns a Server instance to be run with http.ListenAndServe()
 func New(metricStore cache.Cache, alertWebSocket *bot.WriteOnlyUnsafeWebSocket, debugClient *DebugClient) *Server {
 	srv := &Server{
-		router:             http.NewServeMux(),
+		router:             chi.NewRouter(),
 		viewerMetricsStore: metricStore,
 		alertWebSocket:     alertWebSocket,
 		debugClient:        debugClient,
@@ -33,20 +35,20 @@ func (s *Server) routes() {
 	// TODO pull from config
 	baseURL := "http://localhost:8080"
 
-	s.router.HandleFunc("/api/subs/last", s.fetchLastSub())
-	s.router.HandleFunc("/subs/last", s.lastSubView(baseURL+"/api/subs/last"))
+	s.router.Get("/api/subs/last", s.fetchLastSub())
+	s.router.Get("/subs/last", s.lastSubView(baseURL+"/api/subs/last"))
 
-	s.router.HandleFunc("/api/gift/last", s.fetchLastGiftSub())
-	s.router.HandleFunc("/gift/last", s.lastGiftSubView(baseURL+"/api/gift/last"))
+	s.router.Get("/api/gift/last", s.fetchLastGiftSub())
+	s.router.Get("/gift/last", s.lastGiftSubView(baseURL+"/api/gift/last"))
 
-	s.router.HandleFunc("/api/bits/last", s.fetchLastBits())
-	s.router.HandleFunc("/bits/last", s.lastBitsView(baseURL+"/api/bits/last"))
+	s.router.Get("/api/bits/last", s.fetchLastBits())
+	s.router.Get("/bits/last", s.lastBitsView(baseURL+"/api/bits/last"))
 
 	// DEBUG - trigger various events for testing
 	// TODO how do secure when deploy?
-	s.router.HandleFunc("/debug/sub", s.debugSub(s.debugClient))
-	s.router.HandleFunc("/debug/gift", s.debugGift(s.debugClient))
-	s.router.HandleFunc("/debug/bit", s.debugBit(s.debugClient))
+	s.router.Get("/debug/sub", s.debugSub(s.debugClient))
+	s.router.Get("/debug/gift", s.debugGift(s.debugClient))
+	s.router.Get("/debug/bit", s.debugBit(s.debugClient))
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
