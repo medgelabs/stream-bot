@@ -10,14 +10,18 @@ const (
 	// LastSub is the Cache key for the last subscriber
 	LastSub = "lastSub"
 
+	// LastGiftSub is the Cache key for the last user to gift subscriptions
+	LastGiftSub = "lastGiftSub"
+
 	// LastBits is the Cache key for the last bits donation
 	LastBits = "lastBits"
 )
 
 // Metric represents a metric value tied to a Viewer
 type Metric struct {
-	Name   string `json:"name"`
-	Amount int    `json:"amount"`
+	Name      string `json:"name"`
+	Recipient string `json:"recipient,omitempty"`
+	Amount    int    `json:"amount"`
 }
 
 // String representation of a Metric

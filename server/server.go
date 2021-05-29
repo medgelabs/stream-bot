@@ -36,12 +36,16 @@ func (s *Server) routes() {
 	s.router.HandleFunc("/api/subs/last", s.fetchLastSub())
 	s.router.HandleFunc("/subs/last", s.lastSubView(baseURL+"/api/subs/last"))
 
+	s.router.HandleFunc("/api/gift/last", s.fetchLastGiftSub())
+	s.router.HandleFunc("/gift/last", s.lastGiftSubView(baseURL+"/api/gift/last"))
+
 	s.router.HandleFunc("/api/bits/last", s.fetchLastBits())
 	s.router.HandleFunc("/bits/last", s.lastBitsView(baseURL+"/api/bits/last"))
 
 	// DEBUG - trigger various events for testing
 	// TODO how do secure when deploy?
 	s.router.HandleFunc("/debug/sub", s.debugSub(s.debugClient))
+	s.router.HandleFunc("/debug/gift", s.debugGift(s.debugClient))
 	s.router.HandleFunc("/debug/bit", s.debugBit(s.debugClient))
 }
 
