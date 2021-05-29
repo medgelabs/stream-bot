@@ -14,7 +14,6 @@ func (bot *Bot) RegisterBitsHandler(messageTemplate HandlerTemplate) {
 				log.Info(fmt.Sprintf("> %s cheered %d bits!", evt.Sender, evt.Amount))
 				bot.SendMessage(messageTemplate.Parse(evt))
 
-				// TODO if evt.isDebug() { return }
 				metric := viewer.Metric{
 					Name:   evt.Sender,
 					Amount: evt.Amount,

@@ -209,7 +209,6 @@ func main() {
 		log.Fatal(err, "bot connect")
 	}
 
-	// TODO should we have a setter for WS if AlertsEnabled?
 	// Start HTTP server
 	debugClient := server.DebugClient{}
 	chatBot.RegisterClient(&debugClient)

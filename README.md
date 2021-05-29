@@ -67,9 +67,12 @@ CHANNEL_NAME:
 
 The only variable injected is the username. Any other substitutions are ignored.
 
-## Commands - TODO
+## Commands
 
-Commands are currently set in code in the `bot/commandHandler.go` file.
+There are two sets of commands:
+
+* `config.yaml` - defines simple response commands and command aliases
+* `bot/commandHandler.go` - defines commands that require more complex logic
 
 ## Subscribers
 

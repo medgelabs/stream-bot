@@ -60,7 +60,6 @@ func (bot *Bot) SetChatClient(client ChatClient) {
 
 // sendEvent sends a Bot event to Write-enabled clients
 func (bot *Bot) sendEvent(evt Event) {
-	// TODO trace outbound
 	bot.chatClient.Channel() <- evt
 }
 
@@ -79,7 +78,6 @@ func (bot *Bot) Start() error {
 
 // SendMessage sends a message to the given channel, without prefix
 func (bot *Bot) SendMessage(message string) {
-	// TODO do we ever need to send empty messages?
 	if strings.TrimSpace(message) == "" {
 		return
 	}

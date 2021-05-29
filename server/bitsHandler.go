@@ -43,7 +43,6 @@ func (s *Server) lastBitsView(apiEndpoint string) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		onlyOnce.Do(func() {
-			// TODO can this template be part of a Base template somewhere?
 			tmpl, err = tmpl.Parse(`
 				<html lang="en">
 				<head></head>
