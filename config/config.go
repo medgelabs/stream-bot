@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"medgebot/logger"
 	"os"
 
 	"github.com/pkg/errors"
@@ -15,7 +16,7 @@ type Config struct {
 	config  *viper.Viper
 }
 
-// Initialize configuration and read from config.yaml
+// New initializes configuration and read from config.yaml
 func New(channel string, configPath string) (Config, error) {
 	conf := viper.New()
 	conf.SetConfigName("config")
@@ -33,6 +34,18 @@ func New(channel string, configPath string) (Config, error) {
 		channel: channel,
 		config:  conf,
 	}, nil
+}
+
+// LocalServerBaseURL is the base URL that points to the embedded HTTP server
+func (c *Config) LocalServerBaseURL() string {
+	envOverride, present := os.LookupEnv("SERVER_BASE_URL")
+	if present {
+		logger.Info("Env override for SERVER_BASE_URL present")
+		return envOverride
+	}
+
+	value := c.config.GetString(c.key("server.baseURL"))
+	return value
 }
 
 // ChannelID returns the numeric ChannelID for the current broadcaster
@@ -83,6 +96,11 @@ func (c *Config) VaultToken() string {
 // TwitchToken if Store type is ENV
 func (c *Config) TwitchToken() string {
 	return os.Getenv("TWITCH_TOKEN")
+}
+
+// ClientID if Store type is ENV
+func (c *Config) ClientID() string {
+	return os.Getenv("TWITCH_CLIENT_ID")
 }
 
 // Feature Flags - built as opt-in

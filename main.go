@@ -6,6 +6,7 @@ import (
 	"medgebot/bot"
 	"medgebot/cache"
 	"medgebot/config"
+	"medgebot/eventsub"
 	"medgebot/irc"
 	log "medgebot/logger"
 	"medgebot/pubsub"
@@ -57,7 +58,12 @@ func main() {
 		log.Fatal(err, "Create secret store")
 	}
 
-	password, err := store.TwitchToken()
+	clientID, err := store.ClientID()
+	if err != nil {
+		log.Fatal(err, "Get Client ID from store")
+	}
+
+	accessToken, err := store.TwitchToken()
 	if err != nil {
 		log.Fatal(err, "Get Twitch Token from store")
 	}
@@ -70,7 +76,7 @@ func main() {
 
 	ircConfig := irc.Config{
 		Nick:     nick,
-		Password: fmt.Sprintf("oauth:%s", password),
+		Password: fmt.Sprintf("oauth:%s", accessToken),
 		Channel:  channel,
 	}
 
@@ -105,7 +111,7 @@ func main() {
 			log.Fatal(err, "pubsub ws connect")
 		}
 
-		pubsub := pubsub.NewClient(pubSubWs, conf.ChannelID(), password)
+		pubsub := pubsub.NewClient(pubSubWs, conf.ChannelID(), accessToken)
 		pubSubWs.SetPostReconnectFunc(pubsub.Start)
 		pubsub.Start()
 		chatBot.RegisterClient(pubsub)
@@ -213,10 +219,26 @@ func main() {
 		log.Fatal(err, "bot connect")
 	}
 
+	// EventSub Client
+
+	// callbackURL should match the route found in server.routes()
+	callbackURL := conf.LocalServerBaseURL() + "/eventsub/callback"
+	eventSubClient := eventsub.New(eventsub.Config{
+		ServerURL:     "https://api.twitch.tv/helix/eventsub",
+		CallbackURL:   callbackURL,
+		BroadcasterID: conf.ChannelID(),
+		ClientID:      clientID,
+		AccessToken:   accessToken,
+	})
+	err = eventSubClient.Start()
+	if err != nil {
+		log.Fatal(err, "Connect to EventSub")
+	}
+
 	// Start HTTP server
 	debugClient := server.DebugClient{}
 	chatBot.RegisterClient(&debugClient)
-	srv := server.New(metricsCache, &ws, &debugClient)
+	srv := server.New(conf.LocalServerBaseURL(), metricsCache, eventSubClient, &ws, &debugClient)
 	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", listenAddr, listenPort), srv); err != nil {
 		log.Fatal(err, "start HTTP server")
 	}
