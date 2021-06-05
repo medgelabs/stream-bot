@@ -22,4 +22,4 @@ COPY --from=builder /usr/src/app/config.yaml /app/
 EXPOSE 8080
 
 ENV CHANNEL="medgelabs"
-CMD /app/medgebot -channel $CHANNEL -all
+CMD /app/medgebot -channel $CHANNEL -all -host "0.0.0.0" -port "8080"

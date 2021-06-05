@@ -24,9 +24,13 @@ func main() {
 	var channel string
 	var configPath string
 	var enableAll bool
+	var listenAddr string
+	var listenPort string
 
 	flag.StringVar(&channel, "channel", "", "Channel name, without the #, to join")
 	flag.StringVar(&configPath, "config", ".", "Path to the config.yaml file. Default: .")
+	flag.StringVar(&listenAddr, "host", "localhost", "Address to listen on for the HTTP server")
+	flag.StringVar(&listenPort, "port", "8080", "Port to listen on for the HTTP server")
 	flag.BoolVar(&enableAll, "all", false, "Enable all features")
 	flag.Parse()
 
@@ -213,7 +217,7 @@ func main() {
 	debugClient := server.DebugClient{}
 	chatBot.RegisterClient(&debugClient)
 	srv := server.New(metricsCache, &ws, &debugClient)
-	if err := http.ListenAndServe(":8080", srv); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", listenAddr, listenPort), srv); err != nil {
 		log.Fatal(err, "start HTTP server")
 	}
 }
