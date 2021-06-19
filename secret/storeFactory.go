@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	// ENV gets secrets from environment variables
 	ENV = "env"
 )
 
@@ -22,7 +23,8 @@ func NewSecretStore(config config.Config) (Store, error) {
 	switch strings.ToLower(storeType) {
 	case ENV:
 		twitchToken := config.TwitchToken()
-		store := NewEnvStore(twitchToken)
+		clientID := config.ClientID()
+		store := NewEnvStore(twitchToken, clientID)
 		return &store, nil
 	default:
 		return nil, fmt.Errorf("Invalid storeType - %s. Valid values are: %v", storeType, []string{ENV})

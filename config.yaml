@@ -1,4 +1,6 @@
 medgelabs:
+  server:
+    baseURL: "" # Note: can be overridden by the SERVER_BASE_URL env variable
   channelId: 62232210
   nick: medgelabs
   secretStore: env
