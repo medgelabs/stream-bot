@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"medgebot/cache"
 	"medgebot/logger"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -153,9 +154,41 @@ func (bot *Bot) SendPollMessage() {
 
 // closePoll ends an active poll
 func (bot *Bot) closePoll() {
-
 	// Count each vote
-	// bot.SendMessage("Poll Results! "%s" won with %d votes", winningAnswer, count)
+	answersStr, err := bot.dataStore.Get("pollAnswers")
+	if err != nil {
+		logger.Error(err, "Failed to fetch pollAnswers to close poll")
+		return
+	}
+	splitAnswers := strings.Split(answersStr, ",")
+
+	answerCounts := make([]int, len(bot.pollAnswers))
+	for _, answerStr := range splitAnswers {
+		answer, err := strconv.Atoi(answersStr)
+		if err != nil {
+			logger.Warn("Answer %s is not a valid number. Skipping", answerStr)
+			continue
+		}
+
+		answerCounts[answer-1]++
+	}
+
+	highestIdx := 0
+	for idx, count := range answerCounts {
+		if count >= answerCounts[highestIdx] {
+			highestIdx = idx
+		}
+	}
+
+	// Format winning response and account for ties
+	winningAnswer := fmt.Sprintf("[%d] %s with %d votes", highestIdx, bot.pollAnswers[highestIdx], answerCounts[highestIdx])
+	for idx, count := range answerCounts {
+		if count == answerCounts[highestIdx] {
+			winningAnswer += " | "
+			winningAnswer += fmt.Sprintf("[%d] %s with %d votes", idx, bot.pollAnswers[idx], answerCounts[idx])
+		}
+	}
+	bot.SendMessage("Poll Winner(s): %s", winningAnswer)
 
 	logger.Info("Closing poll")
 	bot.pollRunning = false
