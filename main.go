@@ -208,12 +208,6 @@ func main() {
 			bot.NewHandlerTemplate(subsTempl), bot.NewHandlerTemplate(giftSubsTempl))
 	}
 
-	// Alerts link between the Bot and the Web API
-	// ws := bot.WriteOnlyUnsafeWebSocket{}
-	// if conf.AlertsEnabled() || enableAll {
-	// chatBot.RegisterAlertHandler(&ws)
-	// }
-
 	// Start the Bot only after all handlers are loaded
 	if err := chatBot.Start(); err != nil {
 		log.Fatal(err, "bot connect")
