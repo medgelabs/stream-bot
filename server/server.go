@@ -21,11 +21,12 @@ type Server struct {
 }
 
 // New returns a Server instance to be run with http.ListenAndServe()
-func New(dataStore cache.Cache, debugClient *DebugClient, labelHTMLStr string) *Server {
+func New(bot *bot.Bot, dataStore cache.Cache, debugClient *DebugClient, labelHTMLStr string) *Server {
 	srv := &Server{
 		router:      chi.NewRouter(),
 		store:       dataStore,
 		debugClient: debugClient,
+		bot:         bot,
 	}
 
 	// Parse Metrics Label HTML template for reuse by the View Handlers
@@ -56,7 +57,7 @@ func (s *Server) routes() {
 	s.router.Get("/bits/last", s.lastBitsView(baseURL+"/api/bits/last"))
 
 	// Polls
-	// s.router.Post("/polls", s.createPoll())
+	s.router.Post("/polls", s.createPoll())
 
 	// DEBUG - trigger various events for testing
 	// TODO how do secure when deploy?

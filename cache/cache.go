@@ -10,5 +10,8 @@ const (
 type Cache interface {
 	Absent(key string) bool
 	Get(key string) (string, error)
-	Put(key string, value string) error
+	GetOrDefault(key, defaultValue string) (string, error)
+	Put(key, value string) error
+	Append(key, separator, value string) error
+	Clear(key string)
 }

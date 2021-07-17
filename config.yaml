@@ -21,6 +21,8 @@ medgelabs:
   giftsubs:
     enabled: true
     messageFormat: "@{{.Sender}} loaned their lab coat to @{{.Recipient}}!"
+  polls:
+    enabled: true
   channelPoints:
     enabled: false
     mappings:
