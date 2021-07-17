@@ -119,6 +119,7 @@ func (bot *Bot) StartPoll(duration time.Duration, question string, answers []str
 		return errors.New("Poll already running")
 	}
 
+	bot.ClearPoll()
 	logger.Info("Starting new Poll: %s", question)
 	bot.pollRunning = true
 	bot.pollQuestion = question
@@ -149,7 +150,7 @@ func (bot *Bot) SendPollMessage() {
 		formattedAnswers += fmt.Sprintf("%d: %s | ", idx+1, answer)
 	}
 
-	bot.SendMessage("Poll started! Question: %s : %s", bot.pollQuestion, formattedAnswers)
+	bot.SendMessage("Poll started! Type a number only in chat to vote! Question: %s - | %s", bot.pollQuestion, formattedAnswers)
 }
 
 // closePoll ends an active poll
@@ -164,9 +165,10 @@ func (bot *Bot) closePoll() {
 
 	answerCounts := make([]int, len(bot.pollAnswers))
 	for _, answerStr := range splitAnswers {
-		answer, err := strconv.Atoi(answersStr)
+		answer, err := strconv.Atoi(strings.TrimSpace(answersStr))
 		if err != nil {
-			logger.Warn("Answer %s is not a valid number. Skipping", answerStr)
+			logger.Warn("Answer [%s] is not a valid number. Skipping", answerStr)
+			logger.Warn(err.Error())
 			continue
 		}
 
@@ -180,20 +182,39 @@ func (bot *Bot) closePoll() {
 		}
 	}
 
+	// If no votes - exit immediately
+	if answerCounts[highestIdx] == 0 {
+		bot.SendMessage("No poll winner")
+		bot.ClearPoll()
+		return
+	}
+
 	// Format winning response and account for ties
-	winningAnswer := fmt.Sprintf("[%d] %s with %d votes", highestIdx, bot.pollAnswers[highestIdx], answerCounts[highestIdx])
+	winningAnswer := fmt.Sprintf("[%d] %s with %d votes", highestIdx+1, bot.pollAnswers[highestIdx], answerCounts[highestIdx])
 	for idx, count := range answerCounts {
+		if idx == highestIdx {
+			continue
+		}
+
 		if count == answerCounts[highestIdx] {
 			winningAnswer += " | "
-			winningAnswer += fmt.Sprintf("[%d] %s with %d votes", idx, bot.pollAnswers[idx], answerCounts[idx])
+			winningAnswer += fmt.Sprintf("[%d] %s with %d votes", idx+1, bot.pollAnswers[idx], answerCounts[idx])
 		}
 	}
 	bot.SendMessage("Poll Winner(s): %s", winningAnswer)
 
+	// Ensure poll clears
 	logger.Info("Closing poll")
+	bot.ClearPoll()
+}
+
+// ClearPoll clears out any existing Poll state in the Bot and the dataStore
+func (bot *Bot) ClearPoll() {
 	bot.pollRunning = false
 	bot.pollQuestion = ""
 	bot.pollAnswers = []string{}
+	bot.dataStore.Clear("pollAnswers")
+	bot.dataStore.Clear("voters")
 }
 
 // sendEvent sends a Bot event to Write-enabled clients

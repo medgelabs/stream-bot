@@ -47,7 +47,6 @@ func (s *Server) createPoll() func(http.ResponseWriter, *http.Request) {
 		}
 
 		// > write poll to cache, trigger Bot into Poll mode
-		s.store.Clear("pollAnswers")
 		s.bot.StartPoll(time.Duration(req.Minutes)*time.Minute, req.Question, req.Answers)
 	}
 }
