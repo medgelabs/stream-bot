@@ -16,7 +16,13 @@ import (
 	"os"
 	"strings"
 	"text/template"
+
+	_ "embed"
 )
+
+// Metrics Label HTML for the metric views
+//go:embed metricLabel.html
+var metricsHTML string
 
 func main() {
 
@@ -44,11 +50,11 @@ func main() {
 		channel = fmt.Sprintf("#%s", channel)
 	}
 
-	// Cache for various stream metrics
-	metricsCache := mustCreateFileCache("metrics.txt", 0)
+	// Cache for various stream metrics, poll state, etc
+	dataStore := mustCreateFileCache("metrics.txt", 0)
 
 	// Initialize desired state for the bot
-	chatBot := bot.New(metricsCache)
+	chatBot := bot.New(dataStore)
 	chatBot.RegisterReadLogger()
 
 	// Initialize Secrets Store
@@ -202,21 +208,17 @@ func main() {
 			bot.NewHandlerTemplate(subsTempl), bot.NewHandlerTemplate(giftSubsTempl))
 	}
 
-	// Alerts link between the Bot and the Web API
-	ws := bot.WriteOnlyUnsafeWebSocket{}
-	if conf.AlertsEnabled() || enableAll {
-		chatBot.RegisterAlertHandler(&ws)
-	}
-
 	// Start the Bot only after all handlers are loaded
 	if err := chatBot.Start(); err != nil {
 		log.Fatal(err, "bot connect")
 	}
 
 	// Start HTTP server
+	// NOTE: Make sure the cache is the same as the Bot
 	debugClient := server.DebugClient{}
 	chatBot.RegisterClient(&debugClient)
-	srv := server.New(metricsCache, &ws, &debugClient)
+
+	srv := server.New(dataStore, &debugClient, metricsHTML)
 	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", listenAddr, listenPort), srv); err != nil {
 		log.Fatal(err, "start HTTP server")
 	}

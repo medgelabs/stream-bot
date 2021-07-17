@@ -1,0 +1,19 @@
+<html lang="en">
+<head></head>
+<body>
+  <section class="content"></section>
+
+  <script type="text/javascript">
+    fetchContent()
+    setInterval(fetchContent, 3000)
+
+    function fetchContent() {
+      let content = document.querySelector("section.content")
+      fetch("{{.ApiEndpoint}}")
+        .then(r => r.json())
+        .then(r => content.innerHTML = "{{ .Label }}: " + r.data)
+        .catch(err => content.innerHTML = err)
+    }
+   </script>
+</body>
+</html>
