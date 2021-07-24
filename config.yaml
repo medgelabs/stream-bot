@@ -23,6 +23,8 @@ medgelabs:
   giftsubs:
     enabled: true
     messageFormat: "@{{.Sender}} loaned their lab coat to @{{.Recipient}}!"
+  polls:
+    enabled: true
   channelPoints:
     enabled: false
     mappings:
@@ -40,6 +42,8 @@ medgelabs:
         aliasFor: "!so @Sorcerbee"
       - prefix: "!spooky"
         aliasFor: "!so @SpookyGhostMachine"
+      - prefix: "!rhad"
+        aliasFor: "!so @rhadamant5186"
       - prefix: "!gear"
         message: "vim + coc for completion. OLKB Preonic keyboard with Kailh Brown switches. Logitech MX Master 3 mouse. Yeti Blue on a Blue Boom stand. Logitech C930 camera. All connected to 2018 Mac Mini. Pure OBS for streaming setup. Backdrops by the lovely @Sorcerbee!"
       - prefix: "!project"
@@ -52,3 +56,5 @@ medgelabs:
         message: "https://github.com/MatthewEdge/dotfiles"
       - prefix: "!music"
         message: "Most music comes from the Youtube Audio Library! https://www.youtube.com/audiolibrary/music?nv=1"
+      - prefix: "!youtube"
+        message: "All VODs and short clips uploaded here: https://www.youtube.com/channel/UCUs6vGh-0WWS3GY4K-kI4CQ"

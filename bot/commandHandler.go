@@ -38,7 +38,7 @@ func (bot *Bot) HandleCommands(knownCommands []Command) {
 						// If the Command is an alias for another command, change message contents and send back to the Bot
 						if command.IsAlias {
 							evt.Message = command.AliasFor
-							bot.receiveEvent(evt)
+							bot.ReceiveEvent(evt)
 							break
 						}
 

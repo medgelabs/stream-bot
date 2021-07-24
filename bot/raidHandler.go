@@ -24,7 +24,7 @@ func (bot *Bot) RegisterRaidHandler(messageTemplate HandlerTemplate, delaySecond
 					Name:   evt.Sender,
 					Amount: evt.Amount,
 				}
-				bot.metricsCache.Put(viewer.LastRaider, metric.String())
+				bot.dataStore.Put(viewer.LastRaider, metric.String())
 			}
 		}),
 	)

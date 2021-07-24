@@ -89,6 +89,20 @@ func (cache *PersistableCache) Get(key string) (string, error) {
 	return entry.value, nil
 }
 
+// GetOrDefault returns the value at the given key.
+// If key not present, PUT the defaultValue and return
+func (cache *PersistableCache) GetOrDefault(key string, defaultValue string) (string, error) {
+	entry, ok := cache.cache[key]
+
+	// If key doesn't exist, PUT the defaultValue first
+	if !ok {
+		err := cache.Put(key, defaultValue)
+		return defaultValue, err
+	}
+
+	return entry.value, nil
+}
+
 // Put the given key/value. If already present, the timestamp will
 // be updated
 func (cache *PersistableCache) Put(key, value string) error {
@@ -113,10 +127,35 @@ func (cache *PersistableCache) Put(key, value string) error {
 	return nil
 }
 
+// Append appends the given value to an existing key value. If not present, it delegates to
+// a simple cache.Put()
+func (cache *PersistableCache) Append(key, separator, value string) error {
+	entry, err := cache.GetOrDefault(key, "")
+	if err != nil {
+		return errors.Wrap(err, "Get key")
+	}
+
+	if entry == "" {
+		return cache.Put(key, value)
+	}
+
+	return cache.Put(key, fmt.Sprintf("%s%s%s", entry, separator, value))
+}
+
 // Absent is true if the key is either not present or expired
 func (cache *PersistableCache) Absent(key string) bool {
 	entry, ok := cache.cache[key]
 	return !ok || cache.expired(entry.timestamp)
+}
+
+// Clear is a helper function to clear out a given key, if present
+func (cache *PersistableCache) Clear(key string) {
+	_, ok := cache.cache[key]
+	if !ok {
+		return
+	}
+
+	cache.Put(key, "")
 }
 
 // expired checks if the given key's timestamp is beyond the expiration threshold.
