@@ -180,9 +180,9 @@ func (c *Config) GiftSubsMessageFormat() string {
 	return msgFormat
 }
 
-// AlertsEnabled checks the Alerts feature flag
-func (c *Config) AlertsEnabled() bool {
-	flagValue := c.config.GetBool(c.key("alerts.enabled"))
+// PollsEnabled checks the Subs feature flag
+func (c *Config) PollsEnabled() bool {
+	flagValue := c.config.GetBool(c.key("polls.enabled"))
 	return flagValue
 }
 

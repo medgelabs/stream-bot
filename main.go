@@ -24,6 +24,10 @@ import (
 //go:embed metricLabel.html
 var metricsHTML string
 
+// Poll HTML for on-screen Poll renderings
+//go:embed pollBox.html
+var pollHTML string
+
 func main() {
 
 	// CLI argument processing
@@ -208,6 +212,10 @@ func main() {
 			bot.NewHandlerTemplate(subsTempl), bot.NewHandlerTemplate(giftSubsTempl))
 	}
 
+	if conf.PollsEnabled() || enableAll {
+		chatBot.RegisterPollHandler()
+	}
+
 	// Start the Bot only after all handlers are loaded
 	if err := chatBot.Start(); err != nil {
 		log.Fatal(err, "bot connect")
@@ -218,7 +226,7 @@ func main() {
 	debugClient := server.DebugClient{}
 	chatBot.RegisterClient(&debugClient)
 
-	srv := server.New(dataStore, &debugClient, metricsHTML)
+	srv := server.New(&chatBot, dataStore, &debugClient, metricsHTML, pollHTML)
 	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", listenAddr, listenPort), srv); err != nil {
 		log.Fatal(err, "start HTTP server")
 	}

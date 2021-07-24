@@ -18,7 +18,7 @@ func (bot *Bot) RegisterBitsHandler(messageTemplate HandlerTemplate) {
 					Name:   evt.Sender,
 					Amount: evt.Amount,
 				}
-				bot.metricsCache.Put(viewer.LastBits, metric.String())
+				bot.dataStore.Put(viewer.LastBits, metric.String())
 			}
 		}),
 	)

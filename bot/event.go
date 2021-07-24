@@ -9,7 +9,7 @@ const (
 	RAID
 )
 
-// All-encompassing model for Events that the Bot understands
+// Event is an all-encompassing model for Events that the Bot understands
 // NOTE: This struct is referenced by config.yaml. Make changes carefully
 type Event struct {
 	Type      int    // Identify what kind of Event we are receiving

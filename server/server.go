@@ -18,14 +18,16 @@ type Server struct {
 	store       cache.Cache
 	debugClient *DebugClient
 	labelHTML   *template.Template
+	pollHTML    *template.Template
 }
 
 // New returns a Server instance to be run with http.ListenAndServe()
-func New(dataStore cache.Cache, debugClient *DebugClient, labelHTMLStr string) *Server {
+func New(bot *bot.Bot, dataStore cache.Cache, debugClient *DebugClient, labelHTMLStr string, pollHTMLStr string) *Server {
 	srv := &Server{
 		router:      chi.NewRouter(),
 		store:       dataStore,
 		debugClient: debugClient,
+		bot:         bot,
 	}
 
 	// Parse Metrics Label HTML template for reuse by the View Handlers
@@ -35,7 +37,12 @@ func New(dataStore cache.Cache, debugClient *DebugClient, labelHTMLStr string) *
 	}
 	srv.labelHTML = tmpl
 
-	// TODO receive WebSocket connection for alerts and assign to alertWebSocket
+	// Parse Poll HTML template for reuse by the Poll View Handlers
+	tmpl, err = template.New("PolTemplate").Parse(pollHTMLStr)
+	if err != nil {
+		logger.Fatal(err, "Failed to parse Poll HTML template")
+	}
+	srv.pollHTML = tmpl
 
 	srv.routes()
 	return srv
@@ -56,7 +63,9 @@ func (s *Server) routes() {
 	s.router.Get("/bits/last", s.lastBitsView(baseURL+"/api/bits/last"))
 
 	// Polls
-	// s.router.Post("/polls", s.createPoll())
+	s.router.Post("/poll", s.createPoll())
+	s.router.Get("/poll", s.currentPollView(baseURL+"/api/poll"))
+	s.router.Get("/api/poll", s.fetchCurrentPoll())
 
 	// DEBUG - trigger various events for testing
 	// TODO how do secure when deploy?
