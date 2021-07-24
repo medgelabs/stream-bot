@@ -10,7 +10,6 @@ import (
 func (bot *Bot) RegisterPollHandler() {
 	bot.RegisterHandler(
 		NewHandler(func(evt Event) {
-
 			if strings.HasPrefix(evt.Message, "!poll") {
 				bot.SendPollMessage()
 			}
@@ -25,10 +24,6 @@ func (bot *Bot) RegisterPollHandler() {
 				return // Assumed to not be a valid vote
 			}
 
-			if vote <= 0 || vote > len(bot.pollAnswers) {
-				return // Invalid vote answer
-			}
-
 			alreadyVoted, err := bot.dataStore.GetOrDefault("voters", "")
 			if err != nil {
 				logger.Error(err, "fetch voters from bot.dataStore")
@@ -41,12 +36,7 @@ func (bot *Bot) RegisterPollHandler() {
 
 			// Valid vote - append their vote and note that they voted
 			bot.dataStore.Append("voters", ",", evt.Sender)
-
-			err = bot.dataStore.Append("pollAnswers", ",", strconv.Itoa(vote))
-			if err != nil {
-				logger.Error(err, "Append pollAnswers")
-				return
-			}
+			bot.AddPollVote(vote)
 		}),
 	)
 }

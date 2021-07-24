@@ -1,0 +1,50 @@
+<html lang="en">
+<head>
+  <style>
+    p.question {
+      margin-bottom: 0.5em;
+    }
+    ul.answers {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <section class="poll">
+    <p class="question">Test</p>
+    <ul class="answers">
+    </ul>
+  </section>
+  <section class="error"></section>
+
+  <script type="text/javascript">
+    let question = document.querySelector("p.question")
+    let answers = document.querySelector("ul.answers")
+    let error = document.querySelector("section.error")
+
+    fetchContent()
+    setInterval(fetchContent, 1000)
+
+    function fetchContent() {
+      fetch("{{ .ApiEndpoint }}")
+        .then(r => r.json())
+        .then(r => {
+              question.innerHTML = r.question
+              answers.innerHTML = ""
+              r.answers.forEach(answer => {
+                    let answerNode = document.createElement("li")
+                    answerNode.appendChild(document.createTextNode(answer.label + ": " + answer.count))
+                    answers.appendChild(answerNode)
+              })
+
+              error.innerHTML = ""
+        })
+        .catch(err => {
+            error.innerHTML = err
+        })
+    }
+   </script>
+</body>
+</html>

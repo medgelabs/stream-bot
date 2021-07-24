@@ -8,7 +8,53 @@ import (
 	"time"
 )
 
-func (s *Server) createPoll() func(http.ResponseWriter, *http.Request) {
+// currentPollView renders and returns the Poll on-screen HTML box
+func (s *Server) currentPollView(apiEndpoint string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data := RefreshingView{
+			ApiEndpoint: apiEndpoint,
+		}
+		s.pollHTML.Execute(w, data)
+	}
+}
+
+// fetchCurrentPoll returns the current poll's question and voted answers state
+func (s *Server) fetchCurrentPoll() http.HandlerFunc {
+	type Answer struct {
+		Label string `json:"label"`
+		Count int    `json:"count"`
+	}
+	type response struct {
+		Question string   `json:"question"`
+		Answers  []Answer `json:"answers"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !s.bot.IsPollRunning() {
+			s.WriteJSON(w, 200, response{
+				Question: "",
+				Answers:  []Answer{},
+			})
+
+			return
+		}
+
+		question, answers := s.bot.GetPollState()
+		resp := response{
+			Question: question,
+		}
+		for _, answer := range answers {
+			resp.Answers = append(resp.Answers, Answer{
+				Label: answer.Answer,
+				Count: answer.Count,
+			})
+		}
+
+		s.WriteJSON(w, 200, resp)
+	}
+}
+
+func (s *Server) createPoll() http.HandlerFunc {
 	type request struct {
 		Question string   `json:"question"`
 		Answers  []string `json:"answers"`

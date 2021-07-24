@@ -54,3 +54,5 @@ medgelabs:
         message: "https://github.com/MatthewEdge/dotfiles"
       - prefix: "!music"
         message: "Most music comes from the Youtube Audio Library! https://www.youtube.com/audiolibrary/music?nv=1"
+      - prefix: "!youtube"
+        message: "All VODs and short clips uploaded here: https://www.youtube.com/channel/UCUs6vGh-0WWS3GY4K-kI4CQ"

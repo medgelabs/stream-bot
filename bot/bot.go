@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"medgebot/cache"
 	"medgebot/logger"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -34,7 +33,13 @@ type Bot struct {
 	// polls
 	pollRunning  bool
 	pollQuestion string
-	pollAnswers  []string
+	pollAnswers  []PollAnswer
+}
+
+// PollAnswer keeps track of an Answer label and number of votes for that answer
+type PollAnswer struct {
+	Answer string
+	Count  int
 }
 
 // New produces a newly instantiated Bot
@@ -123,7 +128,15 @@ func (bot *Bot) StartPoll(duration time.Duration, question string, answers []str
 	logger.Info("Starting new Poll: %s", question)
 	bot.pollRunning = true
 	bot.pollQuestion = question
-	bot.pollAnswers = answers
+
+	pollAnswers := make([]PollAnswer, len(answers))
+	for idx, answer := range answers {
+		pollAnswers[idx] = PollAnswer{
+			Answer: answer,
+			Count:  0,
+		}
+	}
+	bot.pollAnswers = pollAnswers
 
 	bot.SendPollMessage()
 
@@ -146,62 +159,59 @@ func (bot *Bot) SendPollMessage() {
 	}
 
 	formattedAnswers := ""
-	for idx, answer := range bot.pollAnswers {
-		formattedAnswers += fmt.Sprintf("%d: %s | ", idx+1, answer)
+	for idx, pollAnswer := range bot.pollAnswers {
+		formattedAnswers += fmt.Sprintf("%d: %s | ", idx+1, pollAnswer.Answer)
 	}
 
 	bot.SendMessage("Poll started! Type a number only in chat to vote! Question: %s - | %s", bot.pollQuestion, formattedAnswers)
 }
 
-// closePoll ends an active poll
-func (bot *Bot) closePoll() {
-	// Count each vote
-	answersStr, err := bot.dataStore.Get("pollAnswers")
-	if err != nil {
-		logger.Error(err, "Failed to fetch pollAnswers to close poll")
+// AddPollVote increments the Count for the given Answer key
+func (bot *Bot) AddPollVote(key int) {
+	if key < 1 || key > len(bot.pollAnswers) {
+		// Invalid vote. Skip
 		return
 	}
-	splitAnswers := strings.Split(answersStr, ",")
 
-	answerCounts := make([]int, len(bot.pollAnswers))
-	for _, answerStr := range splitAnswers {
-		answer, err := strconv.Atoi(strings.TrimSpace(answersStr))
-		if err != nil {
-			logger.Warn("Answer [%s] is not a valid number. Skipping", answerStr)
-			logger.Warn(err.Error())
-			continue
-		}
+	bot.pollAnswers[key-1].Count++
+}
 
-		answerCounts[answer-1]++
-	}
+// GetPollState returns the current question, answers, and vote counts for each answer
+func (bot *Bot) GetPollState() (question string, answers []PollAnswer) {
+	return bot.pollQuestion, bot.pollAnswers
+}
 
-	highestIdx := 0
-	for idx, count := range answerCounts {
-		if count >= answerCounts[highestIdx] {
+// closePoll ends an active poll
+func (bot *Bot) closePoll() {
+	highestIdx := -1
+	winningAnswer := PollAnswer{}
+	for idx, answer := range bot.pollAnswers {
+		if answer.Count >= winningAnswer.Count {
 			highestIdx = idx
+			winningAnswer = answer
 		}
 	}
 
 	// If no votes - exit immediately
-	if answerCounts[highestIdx] == 0 {
+	if highestIdx == -1 {
 		bot.SendMessage("No poll winner")
 		bot.ClearPoll()
 		return
 	}
 
 	// Format winning response and account for ties
-	winningAnswer := fmt.Sprintf("[%d] %s with %d votes", highestIdx+1, bot.pollAnswers[highestIdx], answerCounts[highestIdx])
-	for idx, count := range answerCounts {
+	winnerStr := fmt.Sprintf("[%d] %s with %d votes", highestIdx+1, winningAnswer.Answer, winningAnswer.Count)
+	for idx, answer := range bot.pollAnswers {
 		if idx == highestIdx {
 			continue
 		}
 
-		if count == answerCounts[highestIdx] {
-			winningAnswer += " | "
-			winningAnswer += fmt.Sprintf("[%d] %s with %d votes", idx+1, bot.pollAnswers[idx], answerCounts[idx])
+		if answer.Count == winningAnswer.Count {
+			winnerStr += " | "
+			winnerStr += fmt.Sprintf("[%d] %s with %d votes", idx+1, answer.Answer, answer.Count)
 		}
 	}
-	bot.SendMessage("Poll Winner(s): %s", winningAnswer)
+	bot.SendMessage("Poll Winner(s): %s", winnerStr)
 
 	// Ensure poll clears
 	logger.Info("Closing poll")
@@ -212,8 +222,7 @@ func (bot *Bot) closePoll() {
 func (bot *Bot) ClearPoll() {
 	bot.pollRunning = false
 	bot.pollQuestion = ""
-	bot.pollAnswers = []string{}
-	bot.dataStore.Clear("pollAnswers")
+	bot.pollAnswers = []PollAnswer{}
 	bot.dataStore.Clear("voters")
 }
 
