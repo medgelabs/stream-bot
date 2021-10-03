@@ -156,7 +156,6 @@ func main() {
 		// pre-seed names we want ignored
 		greeterCache.Put("streamlabs", "")
 		greeterCache.Put("nightbot", "")
-		greeterCache.Put("ranaebot", "")
 		greeterCache.Put("soundalerts", "")
 		greeterCache.Put("jtv", "")
 		greeterCache.Put(strings.TrimPrefix(channel, "#"), "") // Prevent greeting the broadcaster
@@ -241,7 +240,7 @@ func mustCreateFileCache(filepath string, keyExpirationSeconds int64) *cache.Per
 
 	cache, err := cache.FilePersisted(cacheFile, keyExpirationSeconds)
 	if err != nil {
-		log.Fatal(err, "read greeter cache file")
+		log.Fatal(err, "read cache file")
 	}
 
 	return &cache

@@ -53,31 +53,11 @@ func (c *Config) Cache() string {
 	return val
 }
 
-// RedisHost if the Cache type is REDIS
-func (c *Config) RedisHost() string {
-	return os.Getenv("REDIS_HOST")
-}
-
-// RedisPort if the Cache type is REDIS
-func (c *Config) RedisPort() string {
-	return os.Getenv("REDIS_PORT")
-}
-
 // SecretStore returns the desired secret store type, which should match the
 // secret/storeFactory.go enum
 func (c *Config) SecretStore() string {
 	secretStore := c.config.GetString(c.key("secretStore"))
 	return secretStore
-}
-
-// VaultAddress (host + port) if Store type is VAULT
-func (c *Config) VaultAddress() string {
-	return os.Getenv("VAULT_ADDR")
-}
-
-// VaultToken (secret) if Store type is VAULT
-func (c *Config) VaultToken() string {
-	return os.Getenv("VAULT_TOKEN")
 }
 
 // TwitchToken if Store type is ENV
