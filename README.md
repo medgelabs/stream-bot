@@ -6,6 +6,8 @@ Twitch ChatBot built on stream! Utilizes Twitch IRC to interact with Twitch Chat
 * Commands are also extracted from IRC messages
 * All messages sent _FROM_ the bot _TO_ chat are done via IRC PRIVMSG commands
 
+Trello board: https://trello.com/b/5lpV7uj9/stream-bot
+
 ## Build & Run
 
 The bot should compile to Windows/Mac/Linux native binaries with `go build`.
