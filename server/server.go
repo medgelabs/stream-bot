@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"medgebot/bot"
 	"medgebot/cache"
+	"medgebot/eventsub"
 	"medgebot/logger"
 	"net/http"
 
@@ -13,16 +14,18 @@ import (
 
 // Server REST API
 type Server struct {
-	router      *chi.Mux
-	bot         *bot.Bot
-	store       cache.Cache
-	debugClient *DebugClient
-	labelHTML   *template.Template
-	pollHTML    *template.Template
+	localBaseURL   string
+	router         *chi.Mux
+	bot            *bot.Bot
+	store          cache.Cache
+	debugClient    *DebugClient
+	eventSubClient eventsub.Client
+	labelHTML      *template.Template
+	pollHTML       *template.Template
 }
 
 // New returns a Server instance to be run with http.ListenAndServe()
-func New(bot *bot.Bot, dataStore cache.Cache, debugClient *DebugClient, labelHTMLStr string, pollHTMLStr string) *Server {
+func New(localBaseURL string, bot *bot.Bot, dataStore cache.Cache, debugClient *DebugClient, labelHTMLStr string, pollHTMLStr string) *Server {
 	srv := &Server{
 		router:      chi.NewRouter(),
 		store:       dataStore,
@@ -49,22 +52,21 @@ func New(bot *bot.Bot, dataStore cache.Cache, debugClient *DebugClient, labelHTM
 }
 
 func (s *Server) routes() {
-	// TODO pull from config
-	baseURL := "http://localhost:8080"
+	// REQUIRED for EventSub callbacks
+	s.router.Post("/eventsub/callback", s.eventSubHandler(s.eventSubClient))
 
-	// Metrics endpoints
 	s.router.Get("/api/subs/last", s.fetchLastSub())
-	s.router.Get("/subs/last", s.lastSubView(baseURL+"/api/subs/last"))
+	s.router.Get("/subs/last", s.lastSubView(s.localBaseURL+"/api/subs/last"))
 
 	s.router.Get("/api/gift/last", s.fetchLastGiftSub())
-	s.router.Get("/gift/last", s.lastGiftSubView(baseURL+"/api/gift/last"))
+	s.router.Get("/gift/last", s.lastGiftSubView(s.localBaseURL+"/api/gift/last"))
 
 	s.router.Get("/api/bits/last", s.fetchLastBits())
-	s.router.Get("/bits/last", s.lastBitsView(baseURL+"/api/bits/last"))
+	s.router.Get("/bits/last", s.lastBitsView(s.localBaseURL+"/api/bits/last"))
 
 	// Polls
 	s.router.Post("/poll", s.createPoll())
-	s.router.Get("/poll", s.currentPollView(baseURL+"/api/poll"))
+	s.router.Get("/poll", s.currentPollView(s.localBaseURL+"/api/poll"))
 	s.router.Get("/api/poll", s.fetchCurrentPoll())
 
 	// DEBUG - trigger various events for testing
